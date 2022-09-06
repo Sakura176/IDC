@@ -1,0 +1,10 @@
+**.log
+*.csv
+*.json
+*.xml
+*.log.*
+**/bin/*
+**/lib/*
+/tmp
+/log
+**/build
