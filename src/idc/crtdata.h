@@ -41,7 +41,6 @@ public:
 
 	bool writeToFile(const string datafmt);
 
-
 private:
 	string m_stcodeFile;
 	string m_datapath;

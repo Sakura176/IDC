@@ -184,18 +184,22 @@ public:
      */
     int disconnect();
 
-    // 准备SQL语句。
-    // 参数说明：这是一个可变参数，用法与printf函数相同。
-    // 返回值：0-成功，其它失败，程序中一般不必关心返回值。
-    // 注意：如果SQL语句没有改变，只需要prepare一次就可以了。
+    /**
+     * @brief 准备SQL语句。
+     * 注意：如果SQL语句没有改变，只需要prepare一次就可以了。
+     * @param fmt 可变参数，用法与printf函数相同
+     * @return 0-成功，其它失败，程序中一般不必关心返回值
+     */
     int prepare(const char *fmt,...);
 
-    // 绑定输入变量的地址。
-    // position：字段的顺序，从1开始，必须与prepare方法中的SQL的序号一一对应。
-    // value：输入变量的地址，如果是字符串，内存大小应该是表对应的字段长度加1。
-    // len：如果输入变量的数据类型是字符串，用len指定它的最大长度，建议采用表对应的字段长度。
-    // 返回值：0-成功，其它失败，程序中一般不必关心返回值。
-    // 注意：1）如果SQL语句没有改变，只需要bindin一次就可以了，2）绑定输入变量的总数不能超过MAXPARAMS个。
+    /**
+     * @brief 绑定输入变量的地址。
+     * 注意：1）如果SQL语句没有改变，只需要bindin一次就可以了，2）绑定输入变量的总数不能超过MAXPARAMS个。
+     * @param position 字段的顺序，从1开始，必须与prepare方法中的SQL的序号一一对应。
+     * @param value 输入变量的地址，如果是字符串，内存大小应该是表对应的字段长度加1。
+     * @param len 如果输入变量的数据类型是字符串，用len指定它的最大长度，建议采用表对应的字段长度。
+     * @return 0-成功，其它失败，程序中一般不必关心返回值。
+     */
     int bindin(unsigned int position,int    *value);
     int bindin(unsigned int position,long   *value);
     int bindin(unsigned int position,unsigned int  *value);
@@ -203,15 +207,24 @@ public:
     int bindin(unsigned int position,float *value);
     int bindin(unsigned int position,double *value);
     int bindin(unsigned int position,char   *value,unsigned int len);
-    // 绑定BLOB字段，buffer为BLOB字段的内容，size为BLOB字段的大小。
+    /**
+     * @brief 绑定BLOB字段
+     * 
+     * @param position 字段的顺序，从1开始，必须与prepare方法中的SQL的序号一一对应。
+     * @param buffer BLOB字段的内容
+     * @param size BLOB字段的大小
+     * @return 0-成功，其它失败，程序中一般不必关心返回值。
+     */
     int bindinlob(unsigned int position,void *buffer,unsigned long *size);
 
-    // 把结果集的字段与变量的地址绑定。
-    // position：字段的顺序，从1开始，与SQL的结果集字段一一对应。
-    // value：输出变量的地址，如果是字符串，内存大小应该是表对应的字段长度加1。
-    // len：如果输出变量的数据类型是字符串，用len指定它的最大长度，建议采用表对应的字段长度。
-    // 返回值：0-成功，其它失败，程序中一般不必关心返回值。
-    // 注意：1）如果SQL语句没有改变，只需要bindout一次就可以了，2）绑定输出变量的总数不能超过MAXPARAMS个。
+    /**
+     * @brief 把结果集的字段与变量的地址绑定。
+     * 注意：1）如果SQL语句没有改变，只需要bindout一次就可以了，2）绑定输出变量的总数不能超过MAXPARAMS个。
+     * @param position 字段的顺序，从1开始，与SQL的结果集字段一一对应。
+     * @param value 输出变量的地址，如果是字符串，内存大小应该是表对应的字段长度加1。
+     * @param len 如果输出变量的数据类型是字符串，用len指定它的最大长度，建议采用表对应的字段长度。
+     * @return 返回值：0-成功，其它失败，程序中一般不必关心返回值。
+     */
     int bindout(unsigned int position,int    *value);
     int bindout(unsigned int position,long   *value);
     int bindout(unsigned int position,unsigned int  *value);
@@ -237,13 +250,11 @@ public:
     // 程序中必须检查execute方法的返回值。
     int execute(const char *fmt,...);
 
-    // 从结果集中获取一条记录。
-    // 如果执行的SQL语句是查询语句，调用execute方法后，会产生一个结果集（存放在数据库的缓冲区中）。
-    // next方法从结果集中获取一条记录，把字段的值放入已绑定的输出变量中。
-    // 返回值：0-成功，1403-结果集已无记录，其它-失败，失败的代码在m_cda.rc中，失败的描述在m_cda.message中。
-    // 返回失败的原因主要有两种：1）与数据库的连接已断开；2）绑定输出变量的内存太小。
-    // 每执行一次next方法，m_cda.rpc的值加1。
-    // 程序中必须检查next方法的返回值。
+    /**
+     * @brief 从结果集中获取一条记录，把字段的值放入已绑定的输出变量中。
+     * 如果执行的SQL语句是查询语句，调用execute方法后，会产生一个结果集（存放在数据库的缓冲区中）。
+     * @return 0-成功，1403-结果集已无记录，其它-失败，失败的代码在m_cda.rc中，失败的描述在m_cda.message中。
+     */
     int next();
 };
 #endif

@@ -472,8 +472,8 @@ int SqlStatement::prepare(const char *fmt, ...)
 	
 	// 从待执行的SQL语句中截取30个字符，如果是以"select"打头，就认为是查询语句。
 	char strtemp[31]; 
-  memset(strtemp, 0, sizeof(strtemp)); 
-  memcpy(strtemp, m_sql, sizeof(strtemp));
+	memset(strtemp, 0, sizeof(strtemp)); 
+	memcpy(strtemp, m_sql, sizeof(strtemp));
 	MY__ToUpper(strtemp); MY__DeleteLChar(strtemp,' ');
 	if (strncmp(strtemp,"SELECT",6)==0)  m_sqltype=0;
 
@@ -488,494 +488,494 @@ int SqlStatement::prepare(const char *fmt, ...)
 
 int SqlStatement::bindin(unsigned int position,int *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_LONG;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_LONG;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,long *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,unsigned int *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_LONG;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_LONG;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,unsigned long *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,char *value,unsigned int len)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_VAR_STRING;
-  params_in[position-1].buffer = value;
-  params_in[position-1].length=&params_in_length[position-1];
-  params_in[position-1].is_null=&params_in_is_null[position-1];
+	params_in[position-1].buffer_type = MYSQL_TYPE_VAR_STRING;
+	params_in[position-1].buffer = value;
+	params_in[position-1].length=&params_in_length[position-1];
+	params_in[position-1].is_null=&params_in_is_null[position-1];
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindinlob(unsigned int position,void *buffer,unsigned long *size)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_BLOB;
-  params_in[position-1].buffer = buffer;
-  params_in[position-1].length=size;
-  params_in[position-1].is_null=&params_in_is_null[position-1];
+	params_in[position-1].buffer_type = MYSQL_TYPE_BLOB;
+	params_in[position-1].buffer = buffer;
+	params_in[position-1].length=size;
+	params_in[position-1].is_null=&params_in_is_null[position-1];
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,float *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_FLOAT;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_FLOAT;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindin(unsigned int position,double *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->param_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_in[position-1].buffer_type = MYSQL_TYPE_DOUBLE;
-  params_in[position-1].buffer = value;
+	params_in[position-1].buffer_type = MYSQL_TYPE_DOUBLE;
+	params_in[position-1].buffer = value;
 
-  if (position>maxbindin) maxbindin=position;
+	if (position>maxbindin) maxbindin=position;
 
-  return 0;
+	return 0;
 }
 
 ///////////////////
 int SqlStatement::bindout(unsigned int position,int *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_LONG;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_LONG;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindout(unsigned int position,long *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindout(unsigned int position,unsigned int *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_LONG;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_LONG;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindout(unsigned int position,unsigned long *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_LONGLONG;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindout(unsigned int position,char *value,unsigned int len)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_VAR_STRING;
-  params_out[position-1].buffer = value;
-  params_out[position-1].buffer_length = len;
+	params_out[position-1].buffer_type = MYSQL_TYPE_VAR_STRING;
+	params_out[position-1].buffer = value;
+	params_out[position-1].buffer_length = len;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindoutlob(unsigned int position,void *buffer,unsigned long buffersize,unsigned long *size)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_BLOB;
-  params_out[position-1].length = size;
-  params_out[position-1].buffer = buffer;
-  params_out[position-1].buffer_length = buffersize;
+	params_out[position-1].buffer_type = MYSQL_TYPE_BLOB;
+	params_out[position-1].length = size;
+	params_out[position-1].buffer = buffer;
+	params_out[position-1].buffer_length = buffersize;
 
-  return 0;
+	return 0;
 }
 
 
 int SqlStatement::bindout(unsigned int position,float *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_FLOAT;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_FLOAT;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::bindout(unsigned int position,double *value)
 {
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
-  }
+	if ( (position<1) || (position>=MAXPARAMS) || (position>m_handle->field_count) )
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"array bound.",128);
+	}
 
-  params_out[position-1].buffer_type = MYSQL_TYPE_DOUBLE;
-  params_out[position-1].buffer = value;
+	params_out[position-1].buffer_type = MYSQL_TYPE_DOUBLE;
+	params_out[position-1].buffer = value;
 
-  return 0;
+	return 0;
 }
 
 int SqlStatement::execute()
 {
-  memset(&m_cda,0,sizeof(m_cda));
+	memset(&m_cda,0,sizeof(m_cda));
 
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
 
-  if ( (m_handle->param_count>0) && (m_handle->bind_param_done == 0))
-  {
-    if (mysql_stmt_bind_param(m_handle,params_in) != 0)
-    {
-      err_report(); return m_cda.rc;
-    }
-  }
+	if ( (m_handle->param_count>0) && (m_handle->bind_param_done == 0))
+	{
+		if (mysql_stmt_bind_param(m_handle,params_in) != 0)
+		{
+		err_report(); return m_cda.rc;
+		}
+	}
 
-  if ( (m_handle->field_count>0) && (m_handle->bind_result_done == 0) )
-  {
-    if (mysql_stmt_bind_result(m_handle,params_out) != 0)
-    {
-      err_report(); return m_cda.rc;
-    }
-  }
-  
-  // 处理字符串字段为空的情况。
-  for (unsigned int ii=0;ii<maxbindin;ii++)
-  {
-    if (params_in[ii].buffer_type == MYSQL_TYPE_VAR_STRING )
-    {
-      if (strlen((char *)params_in[ii].buffer)==0) 
-      {
-        params_in_is_null[ii]=true;
-      }
-      else 
-      {
-        params_in_is_null[ii]=false;
-        params_in_length[ii]=strlen((char *)params_in[ii].buffer);
-      }
-    }
+	if ( (m_handle->field_count>0) && (m_handle->bind_result_done == 0) )
+	{
+		if (mysql_stmt_bind_result(m_handle,params_out) != 0)
+		{
+		err_report(); return m_cda.rc;
+		}
+	}
+	
+	// 处理字符串字段为空的情况。
+	for (unsigned int ii=0;ii<maxbindin;ii++)
+	{
+		if (params_in[ii].buffer_type == MYSQL_TYPE_VAR_STRING )
+		{
+		if (strlen((char *)params_in[ii].buffer)==0) 
+		{
+			params_in_is_null[ii]=true;
+		}
+		else 
+		{
+			params_in_is_null[ii]=false;
+			params_in_length[ii]=strlen((char *)params_in[ii].buffer);
+		}
+		}
 
-    if (params_in[ii].buffer_type == MYSQL_TYPE_BLOB )
-    {
-      if ((*params_in[ii].length)==0) 
-        params_in_is_null[ii]=true;
-      else
-        params_in_is_null[ii]=false;
-    }
-  }
+		if (params_in[ii].buffer_type == MYSQL_TYPE_BLOB )
+		{
+		if ((*params_in[ii].length)==0) 
+			params_in_is_null[ii]=true;
+		else
+			params_in_is_null[ii]=false;
+		}
+	}
 
-  if (mysql_stmt_execute(m_handle) != 0)
-  {
-    err_report(); 
+	if (mysql_stmt_execute(m_handle) != 0)
+	{
+		err_report(); 
 
-    if (m_cda.rc==1243) memcpy(&m_cda,&m_cda1,sizeof(struct CDA_DEF));
+		if (m_cda.rc==1243) memcpy(&m_cda,&m_cda1,sizeof(struct CDA_DEF));
 
-    return m_cda.rc;
-  }
-  
-  // 如果不是查询语句，就获取影响记录的行数
-  if (m_sqltype == 1) 
-  { 
-    m_cda.rpc=m_handle->affected_rows;
-    m_conn->m_cda.rpc=m_cda.rpc;
-  }
+		return m_cda.rc;
+	}
+	
+	// 如果不是查询语句，就获取影响记录的行数
+	if (m_sqltype == 1) 
+	{ 
+		m_cda.rpc=m_handle->affected_rows;
+		m_conn->m_cda.rpc=m_cda.rpc;
+	}
 
-  /*
-  if (m_sqltype == 0) 
-   mysql_store_result(m_conn->m_conn);
-  */
-    
-  return 0;
+	/*
+	if (m_sqltype == 0) 
+	mysql_store_result(m_conn->m_conn);
+	*/
+		
+	return 0;
 }
 
 int SqlStatement::execute(const char *fmt,...)
 {
-  char strtmpsql[10241];
-  memset(strtmpsql,0,sizeof(strtmpsql));
+	char strtmpsql[10241];
+	memset(strtmpsql,0,sizeof(strtmpsql));
 
-  va_list ap;
-  va_start(ap,fmt);
-  vsnprintf(strtmpsql,10240,fmt,ap);
-  va_end(ap);
+	va_list ap;
+	va_start(ap,fmt);
+	vsnprintf(strtmpsql,10240,fmt,ap);
+	va_end(ap);
 
-  if (prepare(strtmpsql) != 0) return m_cda.rc;
+	if (prepare(strtmpsql) != 0) return m_cda.rc;
 
-  return execute();
+	return execute();
 }
 
 int SqlStatement::next()
 {
-  // 注意，在该函数中，不可随意用memset(&m_cda,0,sizeof(m_cda))，否则会清空m_cda.rpc的内容
-  if (m_state == 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
-  }
-  
-  // 如果语句未执行成功，直接返回失败。
-  if (m_cda.rc != 0) return m_cda.rc;
-  
-  // 判断是否是查询语句，如果不是，直接返回错误
-  if (m_sqltype != 0)
-  {
-    m_cda.rc=-1; strncpy(m_cda.message,"no recordset found.\n",128); return -1;
-  }
-  
-  int ret=mysql_stmt_fetch(m_handle);
+	// 注意，在该函数中，不可随意用memset(&m_cda,0,sizeof(m_cda))，否则会清空m_cda.rpc的内容
+	if (m_state == 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"cursor not open.\n",128); return -1;
+	}
+	
+	// 如果语句未执行成功，直接返回失败。
+	if (m_cda.rc != 0) return m_cda.rc;
+	
+	// 判断是否是查询语句，如果不是，直接返回错误
+	if (m_sqltype != 0)
+	{
+		m_cda.rc=-1; strncpy(m_cda.message,"no recordset found.\n",128); return -1;
+	}
+	
+	int ret=mysql_stmt_fetch(m_handle);
 
-  if (ret==0) 
-  { 
-    m_cda.rpc++; return 0; 
-  }
- 
-  if (ret==1) 
-  {
-    err_report(); return m_cda.rc;
-  }
+	if (ret==0) 
+	{ 
+		m_cda.rpc++; return 0; 
+	}
+	
+	if (ret==1) 
+	{
+		err_report(); return m_cda.rc;
+	}
 
-  if (ret==MYSQL_NO_DATA) return MYSQL_NO_DATA;
+	if (ret==MYSQL_NO_DATA) return MYSQL_NO_DATA;
 
-  if (ret==MYSQL_DATA_TRUNCATED) 
-  {
-    m_cda.rpc++; return 0;
-  }
-  
-  return 0;
+	if (ret==MYSQL_DATA_TRUNCATED) 
+	{
+		m_cda.rpc++; return 0;
+	}
+	
+	return 0;
 }
 
 // 把文件filename加载到buffer中，必须确保buffer足够大。
 // 成功返回文件的大小，文件不存在或为空返回0。
 unsigned long filetobuf(const char *filename,char *buffer)
 {
-  FILE *fp;
-  int  bytes=0;
-  int  total_bytes=0;
+	FILE *fp;
+	int  bytes=0;
+	int  total_bytes=0;
 
-  if ( (fp=fopen(filename,"r")) ==0 ) return 0;
+	if ( (fp=fopen(filename,"r")) ==0 ) return 0;
 
-  while (true)
-  {
-    bytes=fread(buffer+total_bytes,1,5000,fp);
+	while (true)
+	{
+		bytes=fread(buffer+total_bytes,1,5000,fp);
 
-    total_bytes = total_bytes + bytes;
+		total_bytes = total_bytes + bytes;
 
-    if (bytes<5000) break;
-  }
+		if (bytes<5000) break;
+	}
 
-  fclose(fp);
+	fclose(fp);
 
-  return total_bytes;
+	return total_bytes;
 }
 
 // 把buffer中的内容写入文件filename，size为buffer中有效内容的大小。      
 // 成功返回true，失败返回false。
 bool buftofile(const char *filename,char *buffer,unsigned long size)
 {
-  if (size==0) return false;
+	if (size==0) return false;
 
-  char filenametmp[301];
-  memset(filenametmp,0,sizeof(filenametmp));
-  snprintf(filenametmp,300,"%s.tmp",filename);
+	char filenametmp[301];
+	memset(filenametmp,0,sizeof(filenametmp));
+	snprintf(filenametmp,300,"%s.tmp",filename);
 
-  FILE *fp;
+	FILE *fp;
 
-  if ( (fp=fopen(filenametmp,"w")) ==0 ) return false;
+	if ( (fp=fopen(filenametmp,"w")) ==0 ) return false;
 
-  // 如果buffer比较大，可能存在一次write不完的情况，以下代码可以优化成用一个循环写入。
-  size_t tt=fwrite(buffer,1,size,fp);
+	// 如果buffer比较大，可能存在一次write不完的情况，以下代码可以优化成用一个循环写入。
+	size_t tt=fwrite(buffer,1,size,fp);
 
-  if (tt!=size)
-  {
-    remove(filenametmp); return false;
-  }
+	if (tt!=size)
+	{
+		remove(filenametmp); return false;
+	}
 
-  fclose(fp);
+	fclose(fp);
 
-  if (rename(filenametmp,filename) != 0) return false;
+	if (rename(filenametmp,filename) != 0) return false;
 
-  return true;
+	return true;
 }

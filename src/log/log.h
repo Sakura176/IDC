@@ -14,7 +14,9 @@
 #include <fstream>
 #include <functional>
 #include <map>
+#include <iomanip>
 
+#include "../public/util.h"
 #include "singleton.h"
 
 
@@ -24,7 +26,8 @@
 #define SERVER_LOG_LEVEL(logger, level) \
 	if(logger->getLevel() <= level) \
 		server::LogEventWrap(server::LogEvent::ptr(new server::LogEvent(logger, level, \
-						__FILE__, __LINE__, 0, time(0)))).getSS()//, server::GetThreadId(),
+						__FILE__, __LINE__, 0, time(0), server::GetThreadId()))).getSS() \
+						// server::GetThreadId()
 				//server::GetFiberId(), time(0), server::Thread::GetName()))).getSS()
 
 /**
@@ -58,8 +61,8 @@
 #define SERVER_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if(logger->getLevel() <= level) \
         server::LogEventWrap(server::LogEvent::ptr(new server::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, time(0)))).getEvent()->format(fmt, __VA_ARGS__)
-						// server::GetThreadId(),
+                        __FILE__, __LINE__, 0, time(0), server::GetThreadId()))).getEvent()->format(fmt, __VA_ARGS__)
+						// server::GetThreadId()
                 		// server::GetFiberId(), time(0), server::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 /**
@@ -149,8 +152,9 @@ namespace server
 		 * @param[in] thread_name 线程名称
 		*/
 		LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
-				,const char* file, int32_t line, uint32_t elapse, uint64_t time);
-				//,uint32_t thread_id, uint32_t fiber_id, uint64_t time
+				,const char* file, int32_t line, uint32_t elapse, uint64_t time
+				,uint32_t thread_id);
+				// , uint32_t fiber_id, uint64_t time
 				//,const std::string& thread_name);
 
 		/**
@@ -211,7 +215,7 @@ namespace server
 			return m_ss;}
 
 		/**
-		 * @brief 格式化写入日志内容
+		 * @brief 流式写入日志内容
 		*/
 		void format(const char* fmt, ...);
 

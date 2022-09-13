@@ -267,11 +267,10 @@ bool AddTime(const char *in_stime,char *out_stime,const int timetvl,const char *
 */
 class CTimer
 {
-	private:
-	public:
+private:
 	struct timeval m_start;   // 开始计时的时间。
 	struct timeval m_end;     // 计时完成的时间。
-
+public:
 	// 开始计时。
 	void Start();
 

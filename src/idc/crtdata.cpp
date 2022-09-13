@@ -2,14 +2,15 @@
 #include "../log/log.h"
 
 static server::Logger::ptr logger = SERVER_LOG_NAME("system");
-static server::FileLogAppender::ptr file_appender(new server::FileLogAppender("../log/crtdata.log"));
+static server::FileLogAppender::ptr file_appender(new server::FileLogAppender("/home/yc/IDC/logfile/crtdata.log"));
 
 CrtData::CrtData(const string file, const string datapath)
 {
 	logger->addAppender(file_appender);
 	m_stcodeFile = file;
 	m_datapath = datapath;
-	loadStcode();
+	if (loadStcode() == true);
+		SERVER_LOG_INFO(logger) << "站点信息读取完成！";
 }
 
 bool CrtData::loadStcode()
@@ -65,7 +66,7 @@ bool CrtData::run()
 		memset(&stsurfdata, 0, sizeof(struct st_surfdata));
 		// 用随机数填充分钟观测数据的结构体
 		memcpy(stsurfdata.obtid, m_stcode[i].obtid, 10);	// 站点代码
-		memcpy(stsurfdata.ddatetime, strddatetime, 14);	// 数据时间：格式yyyymmddhh24misss
+		memcpy(stsurfdata.ddatetime, strddatetime, 14);		// 数据时间：格式yyyymmddhh24misss
 		stsurfdata.t = rand()%351;							// 气温：单位。0.1摄氏度
 		stsurfdata.p = rand()%256+10000;					// 气压：0.1百帕
 		stsurfdata.u = rand()%100+1;						// 相对湿度，0-100之间的值
@@ -77,6 +78,7 @@ bool CrtData::run()
 		// 将观测数据放入容器
 		m_stdata.push_back(stsurfdata);
 	}
+	SERVER_LOG_INFO(logger) << "站点随机气候数据生成成功！";
 	return true;
 }
 

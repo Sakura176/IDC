@@ -5,6 +5,7 @@
 *.log.*
 **/bin/*
 **/lib/*
+**/data/*
 /tmp
 /log
 **/build

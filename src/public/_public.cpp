@@ -468,17 +468,35 @@ bool AddTime(const char *in_stime,char *out_stime,const int timetvl,const char *
 
 CTimer::CTimer()
 {
+	memset(&m_start, 0, sizeof(struct timeval));
+	memset(&m_end, 0, sizeof(struct timeval));
 
+	Start();
 }
 
 void CTimer::Start()
 {
-
+	gettimeofday(&m_start, 0);
 }
 
 double CTimer::Elapsed()
 {
-	return 0.1;
+	gettimeofday(&m_end, 0);
+
+	double start, end;
+	start = end = 0;
+
+	char strtemp[51];
+	SNPRINTF(strtemp, sizeof(strtemp), 30, "%ld.%06ld",
+		m_start.tv_sec, m_start.tv_usec);
+	start = atof(strtemp);
+
+	SNPRINTF(strtemp, sizeof(strtemp), 30, "%ld.%06ld",
+		m_end.tv_sec, m_end.tv_usec);
+	end = atof(strtemp);
+
+	Start();
+	return end - start;
 }
 
 /*************************************************************************************

@@ -77,13 +77,14 @@ namespace server
 	}
 
 	LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
-				,const char* file, int32_t line, uint32_t elapse, uint64_t time)
-				//,uint32_t thread_id, uint32_t fiber_id, uint64_t time
+				,const char* file, int32_t line, uint32_t elapse, uint64_t time
+				,uint32_t thread_id) 
+				// uint32_t fiber_id, uint64_t time
 				//,const std::string& thread_name)
 		:m_file(file)
 		,m_line(line)
 		,m_elapse(elapse)
-		// ,m_threadId(thread_id)
+		,m_threadId(thread_id)
 		// ,m_fiberId(fiber_id)
 		,m_time(time)
 		// ,m_threadName(thread_name)
@@ -260,7 +261,7 @@ namespace server
 
 			if(!m_formatter->format(m_filestream, logger, level, event))
 			{
-				std::cout << "error" << std::endl;
+				std::cout << "filepath error" << std::endl;
 			}
 		}
 	}
@@ -287,7 +288,7 @@ namespace server
 		if(m_filestream) {
 			m_filestream.close();
 		}
-		m_filestream.open(m_filename);
+		m_filestream.open(m_filename, std::ios::app);
 		return !!m_filestream;
 	}
 
@@ -488,7 +489,7 @@ namespace server
 									LogEvent::ptr event
 									) override
 		{
-			os << event->getLine();
+			os << std::setw(4) << event->getLine();
 		}
 	};
 

@@ -71,7 +71,31 @@
 + [x] 使用临时文件名接收文件，接收完成后更名
 + [x] 文件上传后根据输入参数删除或备份本地文件
 + [ ] 使用类封装文件上传过程
-+ [ ] 异步通讯实现文件的上传和下载
++ [x] 异步通讯实现文件的上传和下载
+
+## MySQL数据库
+
+### BLOB二进制大对象
+|类型|字节范围|描述|
+|---|---|---|
+|TINYBLOB|0-255 bytes|不超过255个字符的二进制字符串|
+|TINYBLOB|0-255 bytes|短文本字符串|
+|BLOB|0-65535 bytes|二进制形式的长文本数据|
+|TEXT|0-65535 bytes|长文本数据|
+|MEDIUMBLOB|0-16777215 bytes|二进制形式的中等长度文本数据|
+|MEDIUMTEXT|0-16777215 bytes|中等长度文本数据|
+|LONGBLOB|0-4294967295 bytes|二进制形式的极大文本数据|
+|LONGTEXT|0-4294967295 bytes|极大文本数据|
+
+### MySQL数据库远程登陆配置
++ 赋予用户远程登陆权限
+  mysql8的分配权限不能带密码隐式创建账号了，要先创建账号再设置权限
+  ```sql
+  use mysql;
+  update user set host='%' where user='test';
+  Grant all privileges on 用户名.* to '用户名'@'%';
+  flush privileges;
+  ```
 
 ### Linux共享内存
 1. 调用shmget函数获取或创建共享内存
