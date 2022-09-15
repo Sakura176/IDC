@@ -111,7 +111,7 @@ bool CrtData::writeToFile(const string datafmt)
 	}
 	else if (datafmt == "xml")
 	{
-		outfile << "<data>";
+		outfile << "<data>\n";
 
 		for (auto it = m_stdata.begin(); it != m_stdata.end(); it++)
 		{

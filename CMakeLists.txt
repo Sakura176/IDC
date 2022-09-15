@@ -24,8 +24,7 @@ set(LIB_SRC
 	src/log/log.cpp
 	src/config/config.cpp
 	src/public/util.cpp
-	src/tools/obtcodetodb.cpp
-	src/tools/obtdatatodb.cpp
+	src/idc/obttodb.cpp
 )
 add_library(IDC SHARED ${LIB_SRC})
 
