@@ -1,3 +1,6 @@
+#ifndef _OBTTODB_H_
+#define _OBTTODB_H_
+
 #include "../public/_public.h"
 #include "../mysql/_mysql.h"
 #include "../log/log.h"
@@ -82,3 +85,5 @@ private:
 	string m_charset;						// 数据库字符集
 	st_stcode m_stcode;		// 站点参数存放容器
 };
+
+#endif

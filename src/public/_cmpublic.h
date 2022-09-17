@@ -45,6 +45,7 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <memory>
 
 using namespace std;
 

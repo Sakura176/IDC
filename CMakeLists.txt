@@ -23,8 +23,11 @@ set(LIB_SRC
 	src/idc/crtdata.cpp
 	src/log/log.cpp
 	src/config/config.cpp
+	src/thread/mutex.cpp
+	src/thread/thread.cpp
 	src/public/util.cpp
 	src/idc/obttodb.cpp
+	src/idc/dbtofile.cpp
 )
 add_library(IDC SHARED ${LIB_SRC})
 
@@ -45,6 +48,10 @@ target_link_libraries(test_mysql ${LIB_LIB})
 add_executable(test_datatodb test/test_datatodb.cpp)
 add_dependencies(test_datatodb IDC)
 target_link_libraries(test_datatodb ${LIB_LIB})
+
+add_executable(test_config test/test_config.cpp)
+add_dependencies(test_config IDC)
+target_link_libraries(test_config ${LIB_LIB})
 # add_executable(procctl tools/procctl.cpp)
 # add_dependencies(procctl IDC)
 # target_link_libraries(procctl ${LIB_LIB})
