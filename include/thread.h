@@ -6,7 +6,7 @@
 // #include <thread>
 #include <functional>
 #include <memory>
-#include "../public/util.h"
+#include "util.h"
 #include "mutex.h"
 
 namespace server
@@ -49,7 +49,13 @@ namespace server
 		 * 
 		 */
 		void join();
-		
+
+		/**
+		 * @brief 分离线程
+		 * 
+		 */
+		void detach();
+
 		/**
 		 * @brief 获取线程指针，静态方法
 		 * 

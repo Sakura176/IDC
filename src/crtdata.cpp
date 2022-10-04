@@ -1,5 +1,5 @@
-#include "crtdata.h"
-#include "../log/log.h"
+#include "../include/crtdata.h"
+#include "../include/log.h"
 
 static server::Logger::ptr logger = SERVER_LOG_NAME("system");
 static server::FileLogAppender::ptr file_appender(new server::FileLogAppender("/home/yc/IDC/logfile/crtdata.log"));

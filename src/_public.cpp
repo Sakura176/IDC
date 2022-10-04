@@ -7,7 +7,7 @@
  * @LastEditTime: 2022-07-21 16:18:23
  */
 
-#include "_public.h"
+#include "../include/_public.h"
 
 char *STRCPY(char* dest, const size_t destlen, const char* src)
 {

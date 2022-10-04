@@ -9,7 +9,7 @@
  * 
  */
 
-#include "_mysql.h"
+#include "../include/_mysql.h"
 
 void Connection::setdbopt(const char *connstr)
 {
@@ -210,7 +210,9 @@ int Connection::execute(const char *fmt, ...)
 	vsnprintf(m_sql, 10240, fmt, ap);
 	va_end(ap);
 
-	SqlStatement stmt(this);
+	// Connection *conn;
+	Connection::ptr conn(this);
+	SqlStatement stmt(conn);
 
 	return stmt.execute(m_sql);
 }
@@ -253,7 +255,7 @@ SqlStatement::SqlStatement()
 	initial();
 }
 
-SqlStatement::SqlStatement(Connection *conn)
+SqlStatement::SqlStatement(Connection::ptr conn)
 {
 	initial();
 
@@ -265,7 +267,7 @@ SqlStatement::~SqlStatement()
 	disconnect();
 }
 
-int SqlStatement::connect(Connection *conn)
+int SqlStatement::connect(Connection::ptr conn)
 {
 	// 注意，一个SqlStatement在程序中只能绑定一个connection
 	if (m_state == 1) return 0;

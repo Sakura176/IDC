@@ -1,7 +1,7 @@
 #ifndef __IDC_CRTDATA_H__
 #define __IDC_CRTDATA_H__
 
-#include "../public/_public.h"
+#include "_public.h"
 // #include "../log/log.h"
 
 struct st_stcode

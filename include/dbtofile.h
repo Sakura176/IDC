@@ -1,9 +1,9 @@
 #ifndef _DBTOFILE_H_
 #define _DBTOFILE_H_
 
-#include "../public/_public.h"
-#include "../config/config.h"
-#include "../mysql/_mysql.h"
+#include "_public.h"
+#include "config.h"
+#include "_mysql.h"
 
 struct SelectCfg
 {
@@ -57,7 +57,7 @@ private:
 
 private:
 	string m_cfg;					// 配置参数文件路径
-	Connection m_conn;
+	Connection::ptr m_conn;
 	char m_fieldstr[500][31];
 	int m_fieldlen[500];
 	char m_fieldname[500][1000];

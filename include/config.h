@@ -23,8 +23,8 @@
 #include <functional>
 #include <boost/lexical_cast.hpp>
 #include <yaml-cpp/yaml.h>
-#include "../log/log.h"
-#include "../public/util.h"
+#include "log.h"
+#include "util.h"
 
 namespace server
 {

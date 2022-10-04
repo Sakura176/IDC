@@ -2,6 +2,8 @@
 #define __MYSQL_H
 
 #include <stdio.h>
+#include <iostream>
+#include <memory>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -53,6 +55,7 @@ private:
     char m_dbtype[21];
 
 public:
+    typedef std::shared_ptr<Connection> ptr;
     // 数据库的连接状态，0-未连接，1-已连接
     int m_state;
     // 数据库操作的结果或最后一次执行SQL语句的结果
@@ -138,7 +141,7 @@ private:
 
     CDA_DEF m_cda1;      // prepare() SQL语句的结果。
     
-    Connection *m_conn;  // 数据库连接指针。
+    Connection::ptr m_conn;  // 数据库连接指针。
     int m_sqltype;       // SQL语句的类型，0-查询语句；1-非查询语句。
     int m_autocommitopt; // 自动提交标志，0-关闭；1-开启。
     void err_report();   // 错误报告。
@@ -161,7 +164,7 @@ public:
      * 
      * @param conn 数据库连接对象
      */
-    SqlStatement(Connection *conn);
+    SqlStatement(Connection::ptr conn);
 
     /**
      * @brief Destroy the Sql Statement object
@@ -175,7 +178,7 @@ public:
      * @param conn 数据库连接connection对象的地址。
      * @return 0-成功，其它失败，只要conn参数是有效的，并且数据库的游标资源足够，connect方法不会返回失败。
      */
-    int connect(Connection *conn);
+    int connect(Connection::ptr conn);
 
     /**
      * @brief 取消与数据库连接的绑定

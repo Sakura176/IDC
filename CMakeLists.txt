@@ -18,16 +18,19 @@ if(Boost_FOUND)
 endif()
 
 set(LIB_SRC
-	src/public/_public.cpp 
-	src/mysql/_mysql.cpp
-	src/idc/crtdata.cpp
-	src/log/log.cpp
-	src/config/config.cpp
-	src/thread/mutex.cpp
-	src/thread/thread.cpp
-	src/public/util.cpp
-	src/idc/obttodb.cpp
-	src/idc/dbtofile.cpp
+	src/_public.cpp 
+	src/_mysql.cpp
+	src/mysqlconn.cpp
+	src/crtdata.cpp
+	src/log.cpp
+	src/config.cpp
+	src/mutex.cpp
+	src/thread.cpp
+	src/util.cpp
+	src/obttodb.cpp
+	src/dbtofile.cpp
+	src/threadpool.cpp
+	src/sqlconnpool.cpp
 )
 add_library(IDC SHARED ${LIB_SRC})
 
@@ -52,6 +55,18 @@ target_link_libraries(test_datatodb ${LIB_LIB})
 add_executable(test_config test/test_config.cpp)
 add_dependencies(test_config IDC)
 target_link_libraries(test_config ${LIB_LIB})
+
+add_executable(test_fileserver test/test_fileserver.cpp)
+add_dependencies(test_fileserver IDC)
+target_link_libraries(test_fileserver ${LIB_LIB})
+
+add_executable(test_threadpool test/test_threadpool.cpp)
+add_dependencies(test_threadpool IDC)
+target_link_libraries(test_threadpool ${LIB_LIB})
+
+add_executable(demo_client1 test/demo_client1.cpp)
+add_dependencies(demo_client1 IDC)
+target_link_libraries(demo_client1 ${LIB_LIB})
 # add_executable(procctl tools/procctl.cpp)
 # add_dependencies(procctl IDC)
 # target_link_libraries(procctl ${LIB_LIB})

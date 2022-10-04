@@ -251,6 +251,8 @@ ipcs -m			# 查看共享内存
 ipcrm -m shmid	# 删除共享内存
 ipcs -s			# 查看信号量
 ipcrm sem semid # 删除信号量
+ps aux          # 查看进程
+ps -T -p pid	# 查看进程的线程
 ```
 
 ## GDB调试技巧

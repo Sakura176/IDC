@@ -1,4 +1,4 @@
-#include "obttodb.h"
+#include "../include/obttodb.h"
 
 static server::Logger::ptr logger = SERVER_LOG_NAME("system");
 static server::FileLogAppender::ptr file_appender(
@@ -31,15 +31,16 @@ void ObtToDB::setCharset(string charset)
 bool ObtToDB::codeToDB()
 {
 	// 连接数据库
-	if (m_conn.connecttodb(m_connstr.c_str(), m_charset.c_str()) != 0)
+	if (m_conn->connecttodb(m_connstr.c_str(), m_charset.c_str()) != 0)
 	{
-		SERVER_LOG_INFO(logger) << "connect database(" << m_connstr << ", " << m_conn.m_cda.message << ") failed.";
+		SERVER_LOG_INFO(logger) << "connect database(" << m_connstr 
+			<< ", " << m_conn->m_cda.message << ") failed.";
 		return -1;
 	}
 	SERVER_LOG_INFO(logger) << "connect database(" << m_charset << ") ok.";
 
 	// 准备插入表的SQL语句
-	SqlStatement stmtins(&m_conn);
+	SqlStatement stmtins(m_conn);
 	stmtins.prepare("insert into T_ZHOBTCODE(obtid,cityname,provname,lat,lon,height,upttime) \
 					values(:1,:2,:3,:4,:5,:6,now())");
 	stmtins.bindin(1, m_stcode.obtid, 10);
@@ -50,7 +51,7 @@ bool ObtToDB::codeToDB()
 	stmtins.bindin(6, m_stcode.height, 10);
 
 	// 准备更新表的SQL语句
-	SqlStatement stmtupt(&m_conn);
+	SqlStatement stmtupt(m_conn);
 	stmtupt.prepare("update T_ZHOBTCODE set cityname=:1,provname=:2,lat=:3,lon=:4,height=:5,upttime=now() where id=:6");
 	stmtupt.bindin(1, m_stcode.cityname, 30);
 	stmtupt.bindin(2, m_stcode.provname, 30);
@@ -117,22 +118,23 @@ bool ObtToDB::codeToDB()
 			<< ", 更新=" << uptcount << ", 耗时=" << Timer.Elapsed();
 	
 	// 提交事务
-	m_conn.commit();
+	m_conn->commit();
 	return true;
 }
 
 bool ObtToDB::dataToDB()
 {
 	// 连接数据库
-	if (m_conn.connecttodb(m_connstr.c_str(), m_charset.c_str()) != 0)
+	if (m_conn->connecttodb(m_connstr.c_str(), m_charset.c_str()) != 0)
 	{
-		SERVER_LOG_INFO(logger) << "connect database(" << m_connstr << ", " << m_conn.m_cda.message << ") failed.";
+		SERVER_LOG_INFO(logger) << "connect database(" << m_connstr 
+			<< ", " << m_conn->m_cda.message << ") failed.";
 		return false;
 	}
 	SERVER_LOG_INFO(logger) << "connect database(" << m_connstr << ") ok.";
 
 	struct st_surfdata stsurfdata;
-	SqlStatement stmt(&m_conn);
+	SqlStatement stmt(m_conn);
 	stmt.prepare("insert into T_ZHOBTMIND(obtid,ddatetime,t,p,u,wd,wf,r,vis,upttime) \
 			values(:1,str_to_date(:2,'%%Y%%m%%d%%H%%i%%s'),:3,:4,:5,:6,:7,:8,:9,now())");
 	stmt.bindin(1, stsurfdata.obtid, 10);
@@ -212,7 +214,7 @@ bool ObtToDB::dataToDB()
 			<< ", insert count=" << insertcnt << ", time consume=" << Timer.Elapsed();
 
 		File.Close();
-		m_conn.commit();
+		m_conn->commit();
 	}
 	return true;
 }

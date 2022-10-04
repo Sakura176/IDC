@@ -1,4 +1,4 @@
-#include "dbtofile.h"
+#include "../include/dbtofile.h"
 
 static server::Logger::ptr logger = SERVER_LOG_NAME("system");
 static server::FileLogAppender::ptr file_appender(
@@ -123,15 +123,15 @@ bool DBToFile::run()
 	selInDB();
 
 	// 连接数据库
-	if (m_conn.connecttodb(m_selcfg.connstr.c_str(), m_selcfg.charset.c_str()) != 0)
+	if (m_conn->connecttodb(m_selcfg.connstr.c_str(), m_selcfg.charset.c_str()) != 0)
 	{
-		SERVER_LOG_INFO(logger) << "connect database(" << m_selcfg.connstr << ", " << m_conn.m_cda.message << ") failed.";
+		SERVER_LOG_INFO(logger) << "connect database(" << m_selcfg.connstr << ", " << m_conn->m_cda.message << ") failed.";
 		return -1;
 	}
 	SERVER_LOG_INFO(logger) << "connect database(" << m_selcfg.connstr << ", " << m_selcfg.charset << ") ok.";
 
 	// 准备查询的SQL语句
-	SqlStatement stmt(&m_conn);
+	SqlStatement stmt(m_conn);
 	stmt.prepare(m_selcfg.selectsql.c_str());
 	// char fieldname[m_fieldcount][1000+1];
 	for (int i = 1; i < m_fieldcount + 1; i++)

@@ -1,5 +1,5 @@
-#include "thread.h"
-#include "../log/log.h"
+#include "../include/thread.h"
+#include "../include/log.h"
 
 namespace server
 {
@@ -69,6 +69,21 @@ namespace server
 				SERVER_LOG_ERROR(g_logger) << "pthread_join thread fail, rt="
 				<< rt << " name=" << m_name;
 				throw std::logic_error("pthread_join error");
+			}
+			m_thread = 0;
+		}
+	}
+
+	void Thread::detach()
+	{
+		if(m_thread)
+		{
+			int rt = pthread_detach(m_thread);
+			if(rt)
+			{
+				SERVER_LOG_ERROR(g_logger) << "pthread_detach thread fail, rt="
+				<< rt << " name=" << m_name;
+				throw std::logic_error("pthread_detach error");
 			}
 			m_thread = 0;
 		}

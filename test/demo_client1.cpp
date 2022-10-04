@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#include "../_public.h"
+#include "../src/public/_public.h"
 
 int main(int argc, char const *argv[])
 {

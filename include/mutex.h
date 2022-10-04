@@ -8,7 +8,7 @@
 #include <thread>
 #include <memory>
 #include <atomic>
-#include "../public/util.h"
+#include "util.h"
 
 namespace server
 {
@@ -27,6 +27,8 @@ namespace server
 		 * 
 		 */
 		~Semaphore();
+
+		// void setCount(uint32_t count);
 
 		/**
 		 * @brief 获取信号量

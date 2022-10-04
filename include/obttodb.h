@@ -1,9 +1,9 @@
 #ifndef _OBTTODB_H_
 #define _OBTTODB_H_
 
-#include "../public/_public.h"
-#include "../mysql/_mysql.h"
-#include "../log/log.h"
+#include "_public.h"
+#include "_mysql.h"
+#include "log.h"
 
 struct st_stcode
 {
@@ -35,8 +35,8 @@ public:
 	/**
 	 * @brief 构造函数
 	 * 
-	 * @param _inifile 站点参数文件路径
-	 * @param _datapath 观测数据路径
+	 * @param inifile 站点参数文件路径
+	 * @param datapath 观测数据路径
 	 */
 	ObtToDB(string inifile, string datapath);
 
@@ -80,7 +80,7 @@ private:
 private:
 	string m_inifile;						// 站点参数文件
 	string m_datapath;						// 观测数据文件路径
-	Connection m_conn;						// 数据库连接对象
+	Connection::ptr m_conn;						// 数据库连接对象
 	string m_connstr;						// 数据库连接参数
 	string m_charset;						// 数据库字符集
 	st_stcode m_stcode;		// 站点参数存放容器

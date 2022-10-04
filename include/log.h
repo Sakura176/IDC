@@ -17,7 +17,7 @@
 #include <iomanip>
 
 #include "singleton.h"
-#include "../thread/thread.h"
+#include "thread.h"
 
 
 /**
@@ -26,7 +26,7 @@
 #define SERVER_LOG_LEVEL(logger, level) \
 	if(logger->getLevel() <= level) \
 		server::LogEventWrap(server::LogEvent::ptr(new server::LogEvent(logger, level, \
-						__FILE__, __LINE__, 0, time(0)))).getSS()//, server::GetThreadId(),
+						__FILE__, __LINE__, 0, time(0), server::GetThreadId()))).getSS()
 				//server::GetFiberId(), time(0), server::Thread::GetName()))).getSS()
 
 /**
@@ -60,8 +60,7 @@
 #define SERVER_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if(logger->getLevel() <= level) \
         server::LogEventWrap(server::LogEvent::ptr(new server::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, time(0)))).getEvent()->format(fmt, __VA_ARGS__)
-						// server::GetThreadId(),
+                        __FILE__, __LINE__, 0, time(0), server::GetThreadId()))).getEvent()->format(fmt, __VA_ARGS__)
                 		// server::GetFiberId(), time(0), server::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 /**
@@ -151,7 +150,7 @@ namespace server
 		 * @param[in] thread_name 线程名称
 		*/
 		LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
-				,const char* file, int32_t line, uint32_t elapse, uint64_t time);
+				,const char* file, int32_t line, uint32_t elapse, uint64_t time,uint32_t thread_id);
 				//,uint32_t thread_id, uint32_t fiber_id, uint64_t time
 				//,const std::string& thread_name);
 
