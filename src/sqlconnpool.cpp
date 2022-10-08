@@ -13,11 +13,11 @@
 namespace server
 {
 
-	static server::Logger::ptr g_logger = SERVER_LOG_NAME("system");
+	static server::Logger::ptr g_logger = SERVER_LOG_NAME("root");
 
 	SqlConnPool::SqlConnPool()
 	{
-		server::FileLogAppender::ptr file_appender(new server::FileLogAppender("/home/yc/IDC/bin/logfile/sqlconnpool.log"));
+		server::FileLogAppender::ptr file_appender(new server::FileLogAppender("/home/yc/IDC/bin/logfile/fileserver.log"));
 		g_logger->addAppender(file_appender);
 		m_useCount = 0;
 		m_freeCount = 0;

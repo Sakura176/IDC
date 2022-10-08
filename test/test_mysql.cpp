@@ -1,5 +1,8 @@
 #include <unistd.h>
-#include "../src/mysql/_mysql.h"
+#include <fstream>
+#include "../include/_mysql.h"
+#include "../include/mysql.h"
+#include "../include/log.h"
 
 bool blobToFile();
 bool fileToBlob();
@@ -8,25 +11,77 @@ bool selectTable();
 bool updateTable();
 bool insertTable();
 
+static server::Logger::ptr g_logger = SERVER_LOG_NAME("mysql");
+
 int main(int argc, char const *argv[])
 {
-	// insertTable();
-	// sleep(10);
-	// fileToBlob();
-	// blobToFile();
-	selectTable();
+	std::map<std::string, std::string> params;
+	params["host"] = "127.0.0.1";
+	params["user"] = "yc";
+	params["passwd"] = "436052";
+	params["dbname"] = "testmysql";
+
+	server::MySQL::ptr mysql(new server::MySQL(params));
+	if(!mysql->connect())
+	{
+		std::cout << "connect fail" << std::endl;
+	}
+
+	int id = 0;
+	std::string name = "test";
+	double weight = 37.58;
+
+	server::MySQLStmt::ptr stmt = server::MySQLStmt::Create(mysql, 
+		"insert into girls(id,name,weight,btime,pic) values(?,?,?,?,?)");
+
+	// 模拟超女数据，向表中插入5条测试数据
+	for (int i = 6; i < 11; i++)
+	{
+		id = i + 1;
+		name = "西施" + std::to_string(i) + "frank";
+		weight = 45.55 + i;
+
+		std::ostringstream pic;
+		std::string filename = "./data/img/" + std::to_string(i - 5) + ".jpg";
+		std::fstream file;
+		file.open(filename, std::ios::in);
+
+		if (!file.is_open())
+		{
+			SERVER_LOG_INFO(g_logger) << "open file failed!";
+			return 0;
+		}
+		char ch;
+		while (pic && file.get(ch))
+		{
+			pic.put(ch);
+		}
+
+		stmt->bind(1, id);
+		stmt->bind(2, name);
+		stmt->bind(3, weight);
+		stmt->bindTime(4, time(0));
+		stmt->bindBlob(5, pic.str());
+
+		if (stmt->execute() != 0)
+		{
+			SERVER_LOG_ERROR(g_logger) << stmt->getErrStr();
+			return false;
+		}
+	}
+
 	return 0;
 }
 
 bool blobToFile()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
@@ -37,7 +92,7 @@ bool blobToFile()
 		unsigned long picsize;
 	} stgirls;
 
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 	
 	stmt.prepare("select id,pic from girls where id in (2,3,4)");
 	stmt.bindout(1, &stgirls.id);
@@ -62,7 +117,7 @@ bool blobToFile()
 		buftofile(filename, stgirls.pic, stgirls.picsize);
 	}
 
-	conn.commit();
+	conn->commit();
 
 	return 0;
 }
@@ -70,12 +125,12 @@ bool blobToFile()
 bool fileToBlob()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
@@ -86,7 +141,7 @@ bool fileToBlob()
 		unsigned long picsize;
 	} stgirls;
 
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 
 	stmt.prepare("update girls set pic=:1 where id=:2");
 	stmt.bindinlob(1, stgirls.pic, &stgirls.picsize);
@@ -113,7 +168,7 @@ bool fileToBlob()
 
 	printf("update table girls ok.\n");
 
-	conn.commit();
+	conn->commit();
 
 	return 0;
 }
@@ -121,17 +176,17 @@ bool fileToBlob()
 bool deleteTable()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
 	// 操作SQL语句的对象
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 	int iminid, imaxid;
 
 	// 准备更新数据的SQL语句
@@ -151,7 +206,7 @@ bool deleteTable()
 
 	printf("本次删除了%ld条记录。\n", stmt.m_cda.rpc);
 
-	conn.commit();
+	conn->commit();
 
 	return 0;
 }
@@ -159,12 +214,12 @@ bool deleteTable()
 bool selectTable()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
@@ -177,7 +232,7 @@ bool selectTable()
 	} stgirls;
 
 	// 操作SQL语句的对象
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 
 	// 准备更新数据的SQL语句
 	// 超女表girls，超女编号id，超女姓名name，体重weight，报名时间btime，超女说明memo，超女图片pic
@@ -206,7 +261,7 @@ bool selectTable()
 			   stgirls.id, stgirls.name, stgirls.weight, stgirls.btime);
 	}
 
-	conn.commit();
+	conn->commit();
 
 	return true;
 }
@@ -214,12 +269,12 @@ bool selectTable()
 bool updateTable()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
@@ -232,7 +287,7 @@ bool updateTable()
 	} stgirls;
 
 	// 操作SQL语句的对象
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 
 	// 准备更新数据的SQL语句
 	// 超女表girls，超女编号id，超女姓名name，体重weight，报名时间btime，超女说明memo，超女图片pic
@@ -263,7 +318,7 @@ bool updateTable()
 	}
 
 	// 提交事务
-	conn.commit();
+	conn->commit();
 
 	return true;
 }
@@ -271,12 +326,12 @@ bool updateTable()
 bool insertTable()
 {
 	// 数据库连接类
-	Connection conn;
+	Connection::ptr conn;
 
 	// 登录数据库，返回值：0-成功；其它是失败，存放了MySQL的错误代码
 	// 失败代码在conn.m_cda.rc中，失败描述在conn.m_cda.message中。
-	if (conn.connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
-		printf("connect database failed.\n%s\n", conn.m_cda.message); 
+	if (conn->connecttodb("127.0.0.1,yc,436052,testmysql,3306", "utf8")!=0) {
+		printf("connect database failed.\n%s\n", conn->m_cda.message); 
 		return false;
 	}
 
@@ -289,7 +344,7 @@ bool insertTable()
 	} stgirls;
 
 	// 操作SQL语句的对象
-	SqlStatement stmt(&conn);
+	SqlStatement stmt(conn);
 
 	// 准备插入数据的SQL语句
 	// 超女表girls，超女编号id，超女姓名name，体重weight，报名时间btime，超女说明memo，超女图片pic
@@ -320,7 +375,7 @@ bool insertTable()
 	}
 
 	// 提交事务
-	conn.commit();
+	conn->commit();
 
 	return true;
 }

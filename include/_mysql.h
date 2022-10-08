@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <iostream>
 #include <memory>
+#include <functional>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <iomanip>
 
 #include <mysql.h>      // MySQL数据库接口函数的头文件
 
@@ -33,7 +35,7 @@ struct CDA_DEF
     char            message[2048];  // 如果返回失败，存放错误描述信息
 };
 
-class Connection
+class Connection : public std::enable_shared_from_this<Connection>
 {
 private:
     /**

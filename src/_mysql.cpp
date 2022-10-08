@@ -211,8 +211,8 @@ int Connection::execute(const char *fmt, ...)
 	va_end(ap);
 
 	// Connection *conn;
-	Connection::ptr conn(this);
-	SqlStatement stmt(conn);
+	auto self = shared_from_this();
+	SqlStatement stmt(self);
 
 	return stmt.execute(m_sql);
 }

@@ -18,6 +18,7 @@
 
 #include "singleton.h"
 #include "thread.h"
+#include "log.h"
 
 
 /**

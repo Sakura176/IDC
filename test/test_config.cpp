@@ -1,5 +1,5 @@
-#include "../src/config/config.h"
-#include "../src/idc/dbtofile.h"
+#include "../include/config.h"
+#include "../include/dbtofile.h"
 
 int main(int argc, char const *argv[])
 {

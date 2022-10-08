@@ -1,4 +1,4 @@
-#include "../src/idc/crtdata.h"
+#include "../include/crtdata.h"
 
 int main(int argc, char const *argv[])
 {

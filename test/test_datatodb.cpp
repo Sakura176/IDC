@@ -1,5 +1,5 @@
-#include "../src/mysql/_mysql.h"
-#include "../src/idc/obttodb.h"
+#include "../include/_mysql.h"
+#include "../include/obttodb.h"
 
 int main(int argc, char const *argv[])
 {

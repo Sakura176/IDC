@@ -1,5 +1,5 @@
-#include "../src/pool/threadpool.h"
-#include "../src/log/log.h"
+#include "../include/threadpool.h"
+#include "../include/log.h"
 
 server::Logger::ptr g_logger = SERVER_LOG_ROOT();
 

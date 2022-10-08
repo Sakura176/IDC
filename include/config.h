@@ -23,8 +23,10 @@
 #include <functional>
 #include <boost/lexical_cast.hpp>
 #include <yaml-cpp/yaml.h>
-#include "log.h"
-#include "util.h"
+
+#include "../include/log.h"
+#include "../include/util.h"
+#include "../include/thread.h"
 
 namespace server
 {
@@ -369,6 +371,7 @@ namespace server
 	class ConfigVar : public ConfigVarBase
 	{
 	public:
+		typedef RWMutex RWMutexType;
 		typedef std::shared_ptr<ConfigVar> ptr;
 		typedef std::function<void (const T& old_value, const T& new_value)> on_change_cb;
 
@@ -390,7 +393,8 @@ namespace server
 			try 
 			{
 				// return boost::lexical_cast<std::string>(m_val);
-				return ToStr() (m_val);
+				RWMutexType::ReadLock lock(m_mutex);
+				return ToStr()(m_val);
 			} 
 			catch (std::exception& e) 
 			{
@@ -417,17 +421,25 @@ namespace server
 			return false;
 		}
 
-		const T getValue() const { return m_val; }
+		const T getValue()
+		{ 
+			RWMutexType::ReadLock lock(m_mutex);
+			return m_val; 
+		}
 		void setValue(const T& v) 
 		{
-			if(v == m_val)
 			{
-				return;
+				RWMutexType::ReadLock lock(m_mutex);
+				if(v == m_val)
+				{
+					return;
+				}
+				for(auto& i : m_cbs)
+				{
+					i.second(m_val, v);
+				}
 			}
-			for(auto& i : m_cbs)
-			{
-				i.second(m_val, v);
-			}
+			RWMutexType::WriteLock lock(m_mutex);
 			m_val = v;
 		}
 
@@ -438,27 +450,35 @@ namespace server
 		 * @param key 关键词，唯一标识
 		 * @param cb 回调函数
 		*/
-		void addListener(uint64_t key, on_change_cb cb)
+		uint64_t addListener(on_change_cb cb)
 		{
-			m_cbs[key] = cb;
+			static uint64_t s_fun_id = 0;
+			RWMutexType::WriteLock lock(m_mutex);
+			++s_fun_id;
+			m_cbs[s_fun_id] = cb;
+			return s_fun_id;
 		}
 
-		void delListener(uint64_t key, on_change_cb cb)
+		void delListener(uint64_t key)
 		{
+			RWMutexType::WriteLock lock(m_mutex);
 			m_cbs.erase(key);
 		}
 
 		on_change_cb getListener(uint64_t key)
 		{
+			RWMutexType::ReadLock lock(m_mutex);
 			auto it = m_cbs.find(key);
 			return it == m_cbs.end() ? nullptr : it->second;
 		}
 
 		void clearListener()
 		{
+			RWMutexType::WriteLock lock(m_mutex);
 			m_cbs.clear();
 		}
 	private:
+		RWMutexType m_mutex;
 		T m_val;
 
 		// 变更回调函数, uint64_t key
@@ -473,6 +493,7 @@ namespace server
 	public:
 		// 为何要定义基类指针？
 		typedef std::unordered_map<std::string, ConfigVarBase::ptr> ConfigVarMap;
+		typedef RWMutex RWMutexType;
 
 		/**
 		 * @brief 获取/创建对应参数名的配置参数
@@ -489,6 +510,7 @@ namespace server
 				const T& default_value, const std::string& description = "") 
 		{	
 			// std::cout << "m_datas size: " << GetDatas().size() << std::endl;
+			RWMutexType::WriteLock lock(GetMutex());
 			auto it = GetDatas().find(name);
 			if(it != GetDatas().end())
 			{
@@ -532,6 +554,7 @@ namespace server
 		template<class T>
 		static typename ConfigVar<T>::ptr Lookup(const std::string& name)
 		{
+			RWMutexType::ReadLock lock(GetMutex());
 			auto it = GetDatas().find(name);
 			// 如果没找到，返回空指针
 			if(it == GetDatas().end())
@@ -556,6 +579,9 @@ namespace server
 		 * @return ConfigVarBase::ptr 
 		 */
 		static ConfigVarBase::ptr LookupBase(const std::string& name);
+
+		static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
+
 	private:
 		// 静态成员变量，保存配置参数的信息，被该类的所有对象共享
 		// 静态成员函数和静态成员变量初始化顺序无法确定，直接定义静态成员变量会导致错误
@@ -565,6 +591,12 @@ namespace server
 		{
 			static ConfigVarMap s_datas;
 			return s_datas;
+		}
+
+		static RWMutexType& GetMutex()
+		{
+			static RWMutexType s_mutex;
+			return s_mutex;
 		}
 	};
 }

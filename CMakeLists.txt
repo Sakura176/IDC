@@ -20,6 +20,7 @@ endif()
 set(LIB_SRC
 	src/_public.cpp 
 	src/_mysql.cpp
+	src/mysql.cpp
 	src/mysqlconn.cpp
 	src/crtdata.cpp
 	src/log.cpp
