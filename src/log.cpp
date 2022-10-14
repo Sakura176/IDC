@@ -505,7 +505,7 @@ namespace server
 									LogEvent::ptr event
 									) override
 		{
-			os << std::setw(4) << event->getLine();
+			os << event->getLine();
 		}
 	};
 

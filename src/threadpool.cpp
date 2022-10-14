@@ -13,7 +13,6 @@ namespace server
 			std::function<void()> callback = std::bind(ThreadPool::run, this);
 			Thread::ptr thr(new Thread(callback, "name_" + std::to_string(i)));
 		}
-		SERVER_LOG_INFO(g_logger) << "线程创建成功";
 	}
 
 	ThreadPool::~ThreadPool()
@@ -31,7 +30,6 @@ namespace server
 			// Mutex::Lock lock(pool_->mtx);
 			pool_->tasks.emplace(task);
 		}
-		SERVER_LOG_INFO(g_logger) << "add task succsed";
 		pool_->m_semaphore.notify();
 	}
 

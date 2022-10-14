@@ -11,48 +11,59 @@
 #include "../include/log.h"
 #include "../include/_public.h"
 #include "../include/_mysql.h"
+#include "../include/address.h"
+#include "../include/socket.h"
 #include "../include/mysql.h"
 #include "../include/thread.h"
+#include "../include/threadpool.h"
 #include "../include/mutex.h"
 #include "../include/sqlconnpool.h"
 
 static server::Logger::ptr g_logger = SERVER_LOG_NAME("system");
-TcpServer g_tcpServer;
 
-struct st_arg
-{
-	char connstr[101];
-	char charset[51];
-	int port;
-} starg;
-
-server::Mutex mutex;
 
 // static server::SqlConnPool* sqlPool = server::sqlConnPool::GetInstance();
 
-void run(int sockfd, server::MySQL::ptr mysql);
+void run(server::Socket::ptr sock, server::MySQL::ptr mysql);
+
+// void test(server::Socket::ptr sock, server::MySQL::ptr mysql);
 
 bool _xmtoarg(char *strxmlbuffer);
 
 int ReadT(const int sockfd, char *buffer, const int size, const int itimeout);
 
-bool Login(server::MySQL::ptr mysql, const char *buffer, const int sockfd);
+bool Login(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
-bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, const int sockfd);
+bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
-bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, const int sockfd);
+bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
 bool getvalue(const char *buffer, const char *name, char *value, const int len);
+std::string getvalue(const char *buffer, const std::string name);
 
 int main(int argc, char const *argv[])
 {
-	// server::FileLogAppender::ptr file_appender(new server::FileLogAppender("/home/yc/IDC/bin/logfile/fileserver.log"));
-    // g_logger->addAppender(file_appender);
-
-	// memset(&starg, 0, sizeof(struct st_arg));
-	// sprintf(starg.connstr, "127.0.0.1,yc,436052,IDC,3306");
-	// sprintf(starg.charset, "utf8");
-	// starg.port = 3306;
+    server::IPAddress::ptr addr = server::Address::LookupAnyIPAddress("0.0.0.0:3389");
+    if(addr) {
+        SERVER_LOG_INFO(g_logger) << "get address: " << addr->toString();
+    } else {
+        SERVER_LOG_ERROR(g_logger) << "get address fail";
+        return -1;
+    }
+    server::Socket::ptr sock = server::Socket::CreateTCP(addr);
+    
+    if(!sock->bind(addr)) {
+        SERVER_LOG_ERROR(g_logger) << "bind fail errno="
+            << errno << " errstr=" << strerror(errno)
+            << " addr=[" << addr->toString() << "]";
+        return -1;
+    }
+    if(!sock->listen()) {
+        SERVER_LOG_ERROR(g_logger) << "listen fail errno="
+            << errno << " errstr=" << strerror(errno)
+            << " addr=[" << addr->toString() << "]";
+        return -1;
+    }
 
 	std::map<std::string, std::string> params;
 	params["port"] = "3306";
@@ -60,46 +71,56 @@ int main(int argc, char const *argv[])
 	params["user"] = "yc";
 	params["passwd"] = "436052";
 	params["dbname"] = "IDC";
-
 	server::MySQL::ptr mysql(new server::MySQL(params));
-
-	if (g_tcpServer.InitServer(3389) == false)
-	{
-		SERVER_LOG_INFO(g_logger) << "tcpServer: init failed.";
-		return -1;
-	}
-	SERVER_LOG_INFO(g_logger) << "tcpServer: init ok.";
+	std::queue<server::Socket::ptr> client_pool;
+	server::Socket::ptr cli;
 
 	while (true)
 	{
+		// server::ThreadPool::ptr tp(new server::ThreadPool(5));
+		cli = sock->accept();
+		SERVER_LOG_INFO(g_logger) << cli->toString();
+		if (cli)
+		{
+			client_pool.push(cli);
+		}
 		// 接受客户端的连接
-		if (g_tcpServer.Accept() == false) continue;
-		// SERVER_LOG_INFO(g_logger) << "client IP: " << g_tcpServer.GetIP() << " connected。";
-		string ip = g_tcpServer.GetIP();
-		std::function<void()> run1 = std::bind(run, g_tcpServer.m_connfd, mysql);
-		server::Thread::ptr thr(new server::Thread(run1, "name_" + ip));
+		if (client_pool.empty())
+			continue;
+		
+		server::Socket::ptr client = client_pool.front();
+		client->setRecvTimeout(100);
+		server::Address::ptr ip = client->getRemoteAddress();
+		SERVER_LOG_INFO(g_logger) << ip->toString();
+		std::function<void()> run1 = std::bind(run, client, mysql);
+		server::Thread::ptr thr(new server::Thread(run1, "name_" + ip->toString()));
+			// std::function<void()> run1 = std::bind(run, client, mysql);
+			// tp->AddTask(run1);
+		client_pool.pop();
 	}
 
 	return 0;
 }
 
-void run(int sockfd, server::MySQL::ptr mysql)
+void run(server::Socket::ptr sock, server::MySQL::ptr mysql)
 {
 	char strrecvbuf[1024];
 	char strsendbuf[1024];
 	memset(strrecvbuf, 0, sizeof(strrecvbuf));
 
+	SERVER_LOG_INFO(g_logger) << "子进程开始接收数据...";
+
 	// 读取客户端的报文，如果超时或失败，线程退出
-	if (ReadT(sockfd, strrecvbuf, sizeof(strrecvbuf), 100) == -1)
+	if (sock->recv(strrecvbuf, strlen(strrecvbuf)) <= 0)
 	{
 		SERVER_LOG_INFO(g_logger) << "读取客户端报文失败";
 		return;
 	}
-
+	SERVER_LOG_INFO(g_logger) << strrecvbuf;
 	// 如果不是GET请求报文则不处理，线程退出
 	if (strncmp(strrecvbuf, "GET", 3) != 0)
 	{
-		close(sockfd);
+		sock->close();
 		return;
 	}
 
@@ -109,16 +130,16 @@ void run(int sockfd, server::MySQL::ptr mysql)
 	}
 
 	// 判断URL中用户名和密码，如果不正确，返回认证失败的相应报文，线程退出
-	if (Login(mysql, strrecvbuf, sockfd) == false)
+	if (Login(mysql, strrecvbuf, sock) == false)
 	{
-		close(sockfd);
+		sock->close();
 		return;
 	}
 
 	// 判断用户是否有调用接口的权限，如果没有，返回没有权限的相应报文，线程退出
-	if (CheckPerm(mysql, strrecvbuf, sockfd) == false)
+	if (CheckPerm(mysql, strrecvbuf, sock) == false)
 	{
-		close(sockfd);
+		sock->close();
 		return;
 	}
 
@@ -128,34 +149,31 @@ void run(int sockfd, server::MySQL::ptr mysql)
 		"HTTP/1.1 200 OK\r\n" \
 		"Server: webserver\r\n" \
 		"Content-Type: text/html;charset=utf-8\r\n\r\n");
-	Writen(sockfd, strsendbuf, strlen(strsendbuf));
+	if(sock->send(strsendbuf, strlen(strsendbuf)) <= 0)
+	{
+		SERVER_LOG_ERROR(g_logger) << "发送数据失败";
+	}
 
 	// 再执行接口的sql语句，把数据返回给客户端。
-	if (ExecSQL(mysql, strsendbuf, sockfd) == false)
+	if (ExecSQL(mysql, strrecvbuf, sock) == false)
 	{
 		SERVER_LOG_ERROR(g_logger) << "执行sql语句失败";
-		close(sockfd);
+		sock->close();
 		return;
 	}
 
-	close(sockfd);
+	sock->close();
 }
 
-bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, const int sockfd)
+bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock)
 {
 	// 从请求报文中解析接口名
-	char intername[30];
-	memset(intername, 0, sizeof(intername));
-	getvalue(buffer, "interid", intername, 30);
-	std::string interid(intername);
+	std::string interid = getvalue(buffer, "interid");
 
 	// 从接口参数配置表T_INTERCFG中加载接口参数
-
-	auto stmt = std::dynamic_pointer_cast<server::MySQLStmt>(
-		mysql->prepare("select selectsql,colstr,bindin from T_INTERCFG where interid=?"));
-	stmt->bind(1, interid);
-
-	auto res = std::dynamic_pointer_cast<server::MySQLStmtRes>(stmt->query());
+	auto res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
+		"select selectsql,colstr,bindin from T_INTERCFG where interid=?", interid
+	));
 
 	if(!res)
 	{
@@ -169,88 +187,70 @@ bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, const int sockfd)
 		return false;
 	}
 	
-	// while (res->next())
-	// {
-	int colcount = res->getColumnCount();
-	std::string selectstr = res->getString(0);
-	SERVER_LOG_INFO(g_logger) << colcount << " - " << selectstr;
-	// }
+	res->next();
+	std::string selectsql = res->getString(0);
+	std::string colstr = res->getString(1);
+	std::string bindin = res->getString(2);
+	SERVER_LOG_INFO(g_logger) << selectsql;
+	SERVER_LOG_INFO(g_logger) << colstr;
+	SERVER_LOG_INFO(g_logger) << bindin;
 
 
 	// 准备查询数据的SQL语句
-	// stmt.prepare(selectsql);
+	res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
+		selectsql.c_str()));
 
-	// CCmdStr CmdStr;
-	// CmdStr.SplitToCmd(bindin, ",");
+	if(!res)
+	{
+		SERVER_LOG_ERROR(g_logger) << "invalid";
+		return false;
+	}
 
-	// char invalue[CmdStr.CmdCount()][101];
-	// memset(invalue, 0, sizeof(invalue));
+	if(res->getErrno()) {
+		SERVER_LOG_ERROR(g_logger) << "errno=" << res->getErrno()
+								   << " errstr=" << res->getErrStr() << std::endl;
+		return false;
+	}
 
-	// for (int i = 0; i < CmdStr.CmdCount(); i++)
-	// {
-	// 	getvalue(buffer, CmdStr.m_vCmdStr[i].c_str(), invalue[i], 100);
-	// 	stmt.bindin(i + 1, invalue[i], 100);
-	// }
+	// 向客户端发送XML内容的头部标签<data>
+	sock->send("<data>\n", strlen("<data>\n"));
 
-	// // 拆分colstr，可以得到结果集的字段数
-	// CmdStr.SplitToCmd(colstr, ",");
+	CCmdStr CmdStr;
+	CmdStr.SplitToCmd(colstr, ",");
+	char strsendbuffer[4001];
+	memset(strsendbuffer, 0, sizeof(strsendbuffer));
+	std::string line;
+	while (res->next())
+	{
+		for (int i = 0; i < CmdStr.CmdCount(); i++)
+		{
+			switch (res->getColumnType(i))
+			{
+			case 254 :
+				line += "<" + CmdStr.m_vCmdStr[i] + ">" + res->getString(i).c_str() + "</" + CmdStr.m_vCmdStr[i] + ">";
+				break;
+			case 3 :
+				line += "<" + CmdStr.m_vCmdStr[i] + ">" + std::to_string(res->getInt32(i)) + "</" + CmdStr.m_vCmdStr[i] + ">";
+				break;
+			default:
+				line += "<" + CmdStr.m_vCmdStr[i] + ">" + res->getString(i).c_str() + "</" + CmdStr.m_vCmdStr[i] + ">";
+				break;
+			}
+		}
+		line += "<endl>\n";
+		// SERVER_LOG_INFO(g_logger) << line;
+		memcpy(strsendbuffer, line.c_str(), line.size() + 1);
+		sock->send(strsendbuffer, strlen(strsendbuffer));
+		line.clear();
+	}
+	sock->send("</data>\n", strlen("</data>\n"));
 
-	// // 用于存放结果集的数组
-	// char colvalue[CmdStr.CmdCount()][2001];
+	std::vector<std::string> invalue;
 
-	// // 把结果集绑定到colvalue数组
-	// for (int i = 0; i < CmdStr.CmdCount(); i++)
-	// {
-	// 	stmt.bindout(i + 1, colvalue[i], 2000);
-	// }
-
-	// // 执行SQL语句
-	// char strsendbuffer[4001];
-	// memset(strsendbuffer, 0, sizeof(strsendbuffer));
-
-	// if (stmt.execute() != 0)
-	// {
-	// 	sprintf(strsendbuffer, "<retcode>%d</retcode><message>%s</message>\n", stmt.m_cda.rc, stmt.m_cda.message);
-	// 	Writen(sockfd, strsendbuffer, strlen(strsendbuffer));
-	// 	printf("stmt.execute() failed.\n%s\n%s\n", stmt.m_sql,stmt.m_cda.message);
-	// }
-	// strcpy(strsendbuffer, "<retcode>0</retcode><message>ok</message>\n");
-	// Writen(sockfd, strsendbuffer, strlen(strsendbuffer));
-
-	// // 向客户端发送XML内容的头部标签<data>
-	// Writen(sockfd, "<data>\n", strlen("<data>\n"));
-
-	// char strtemp[2001];
-
-	// while (true)
-	// {
-	// 	memset(strsendbuffer, 0, sizeof(strsendbuffer));
-	// 	memset(colvalue, 0, sizeof(colvalue));
-
-	// 	if (stmt.next() != 0) break;
-
-	// 	for (int i = 0; i < CmdStr.CmdCount(); i++)
-	// 	{
-	// 		memset(strtemp, 0, sizeof(strtemp));
-	// 		snprintf(strtemp, 2000, "<%s>%s</%s>", CmdStr.m_vCmdStr[i].c_str(),
-	// 			colvalue[i], CmdStr.m_vCmdStr[i].c_str());
-	// 		strcat(strsendbuffer, strtemp);
-	// 	}
-
-	// 	strcat(strsendbuffer, "<endl/>\n");
-
-	// 	Writen(sockfd, strsendbuffer, strlen(strsendbuffer));
-	// }
-	// Writen(sockfd, "</data>\n", strlen("</data>\n"));
-
-	// SERVER_LOG_INFO(g_logger) << "intername=" << intername
-	// 	<< ", count=" << stmt.m_cda.rpc;
-	
-	// conn->commit();
 	return true;
 }
 
-bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, const int sockfd)
+bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock)
 {
 	char username[31], intername[31];
 
@@ -282,7 +282,7 @@ bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, const int sockfd)
 			"Content-Type: text/html;charset=utf-8\r\n\r\n"\
 			"<retcode>-1</retcode><message>permission denied</message>");
 
-		Writen(sockfd,strbuffer,strlen(strbuffer));
+		sock->send(strbuffer,strlen(strbuffer));
 		return false;
 	}
 
@@ -292,7 +292,7 @@ bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, const int sockfd)
 	return true;
 }
 
-bool Login(server::MySQL::ptr mysql,const char *buffer, const int sockfd)
+bool Login(server::MySQL::ptr mysql,const char *buffer, server::Socket::ptr sock)
 {
 	char username[31];
 	char password[31];
@@ -320,7 +320,7 @@ bool Login(server::MySQL::ptr mysql,const char *buffer, const int sockfd)
 			"Server: webserver\r\n"\
 			"Content-Type: text/html;charset=utf-8\r\n\r\n"\
 			"<retcode>-1</retcode><message>username or passwd is invailed</message>");
-		Writen(sockfd, strbuffer, strlen(strbuffer));
+		sock->send(strbuffer, strlen(strbuffer));
 
 		return false;
 	}
@@ -331,7 +331,7 @@ bool Login(server::MySQL::ptr mysql,const char *buffer, const int sockfd)
 
 /**
  * @brief 
- * GET /?username\=ty\&passwd HTTP/1.1
+ * GET /?username=ty&passwd HTTP/1.1
  * @param buffer 
  * @param name 
  * @param value 
@@ -339,6 +339,18 @@ bool Login(server::MySQL::ptr mysql,const char *buffer, const int sockfd)
  * @return true 
  * @return false 
  */
+std::string getvalue(const char *buffer, const std::string name)
+{
+	std::string str(buffer);
+	size_t start = str.find(name) + name.size() + 1;
+	str = str.substr(start);
+
+	size_t end = str.find("HTTP");
+	std::string ret = str.substr(0, end - 1);
+
+	return ret;
+}
+
 bool getvalue(const char *buffer, const char *name, char *value, const int len)
 {
 	value[0] = 0;
@@ -363,31 +375,31 @@ bool getvalue(const char *buffer, const char *name, char *value, const int len)
 	return true;
 }
 
-bool _xmltoarg(char *strxmlbuffer)
-{
-	memset(&starg, 0, sizeof(struct st_arg));
-	GetXMLBuffer(strxmlbuffer, "connstr", starg.connstr, 100);
-	if (strlen(starg.connstr) == 0) 
-	{
-		SERVER_LOG_INFO(g_logger) << "connstr is null";
-		return false;
-	}
+// bool _xmltoarg(char *strxmlbuffer)
+// {
+// 	memset(&starg, 0, sizeof(struct st_arg));
+// 	GetXMLBuffer(strxmlbuffer, "connstr", starg.connstr, 100);
+// 	if (strlen(starg.connstr) == 0) 
+// 	{
+// 		SERVER_LOG_INFO(g_logger) << "connstr is null";
+// 		return false;
+// 	}
 
-	GetXMLBuffer(strxmlbuffer, "charset", starg.charset, 50);
-	if (strlen(starg.charset) == 0) 
-	{
-		SERVER_LOG_INFO(g_logger) << "charset is null";
-		return false;
-	}
+// 	GetXMLBuffer(strxmlbuffer, "charset", starg.charset, 50);
+// 	if (strlen(starg.charset) == 0) 
+// 	{
+// 		SERVER_LOG_INFO(g_logger) << "charset is null";
+// 		return false;
+// 	}
 
-	GetXMLBuffer(strxmlbuffer, "port", &starg.port);
-	if (starg.port == 0)
-	{
-		SERVER_LOG_INFO(g_logger) << "port is null";
-		return false;
-	}
-	return true;
-}
+// 	GetXMLBuffer(strxmlbuffer, "port", &starg.port);
+// 	if (starg.port == 0)
+// 	{
+// 		SERVER_LOG_INFO(g_logger) << "port is null";
+// 		return false;
+// 	}
+// 	return true;
+// }
 
 int ReadT(const int sockfd, char *buffer, const int size, const int itimeout)
 {

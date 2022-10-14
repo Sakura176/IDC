@@ -91,58 +91,107 @@ namespace server
 	 */
 	class MySQLStmtRes : public ISQLData 
 	{
-		friend class MySQLStmt;
-		public:
-			typedef std::shared_ptr<MySQLStmtRes> ptr;
-			static MySQLStmtRes::ptr Create(std::shared_ptr<MySQLStmt> stmt);
-			~MySQLStmtRes();
+	friend class MySQLStmt;
+	public:
+		typedef std::shared_ptr<MySQLStmtRes> ptr;
+		static MySQLStmtRes::ptr Create(std::shared_ptr<MySQLStmt> stmt);
+		~MySQLStmtRes();
 
-			int getErrno() const { return m_errno;}
-			const std::string& getErrStr() const { return m_errstr;}
+		/**
+		 * @brief 获取错误代码
+		 * 
+		 * @return int 
+		 */
+		int getErrno() const { return m_errno; }
 
-			int getDataCount() override;
-			int getColumnCount() override;
-			int getColumnBytes(int idx) override;
-			int getColumnType(int idx) override;
-			std::string getColumnName(int idx) override;
+		/**
+		 * @brief 获取错误信息
+		 * 
+		 * @return const std::string& 
+		 */
+		const std::string& getErrStr() const { return m_errstr; }
 
-			bool isNull(int idx) override;
-			int8_t getInt8(int idx) override;
-			uint8_t getUint8(int idx) override;
-			int16_t getInt16(int idx) override;
-			uint16_t getUint16(int idx) override;
-			int32_t getInt32(int idx) override;
-			uint32_t getUint32(int idx) override;
-			int64_t getInt64(int idx) override;
-			uint64_t getUint64(int idx) override;
-			float getFloat(int idx) override;
-			double getDouble(int idx) override;
-			std::string getString(int idx) override;
-			std::string getBlob(int idx) override;
-			time_t getTime(int idx) override;
-			bool next() override;
-		private:
-			MySQLStmtRes(std::shared_ptr<MySQLStmt> stmt, int eno, const std::string& estr);
-			struct Data 
-			{
-				Data();
-				~Data();
+		/**
+		 * @brief 获取数据条数
+		 * 
+		 * @return int 
+		 */
+		int getDataCount() override;
 
-				void alloc(size_t size);
+		/**
+		 * @brief 获取返回字段的数量
+		 * 
+		 * @return int 
+		 */
+		int getColumnCount() override;
 
-				bool is_null;
-				bool error;
-				enum_field_types type;
-				unsigned long length;
-				int32_t data_length;
-				char* data;
-			};
-		private:
-			int m_errno;
-			std::string m_errstr;
-			std::shared_ptr<MySQLStmt> m_stmt;
-			std::vector<MYSQL_BIND> m_binds;
-			std::vector<Data> m_datas;
+		/**
+		 * @brief 获取字段数据的长度
+		 * 
+		 * @param idx 字段索引
+		 * @return int 
+		 */
+		int getColumnBytes(int idx) override;
+
+		/**
+		 * @brief 获取字段数据类型
+		 * 
+		 * @param idx 字段索引
+		 * @return int 
+		 */
+		int getColumnType(int idx) override;
+
+		/**
+		 * @brief 获取字段名
+		 * 
+		 * @param idx 字段索引
+		 * @return std::string 
+		 */
+		std::string getColumnName(int idx) override;
+
+		/**
+		 * @brief 判断数据库返回的指定索引下的字段数据是否为空
+		 * 
+		 * @param idx 字段索引
+		 * @return true 
+		 */
+		bool isNull(int idx) override;
+		int8_t getInt8(int idx) override;
+		uint8_t getUint8(int idx) override;
+		int16_t getInt16(int idx) override;
+		uint16_t getUint16(int idx) override;
+		int32_t getInt32(int idx) override;
+		uint32_t getUint32(int idx) override;
+		int64_t getInt64(int idx) override;
+		uint64_t getUint64(int idx) override;
+		float getFloat(int idx) override;
+		double getDouble(int idx) override;
+		std::string getString(int idx) override;
+		std::string getBlob(int idx) override;
+		time_t getTime(int idx) override;
+		bool next() override;
+	private:
+		MySQLStmtRes(std::shared_ptr<MySQLStmt> stmt, int eno, const std::string& estr);
+		struct Data 
+		{
+			Data();
+			~Data();
+
+			void alloc(size_t size);
+
+			bool is_null;
+			bool error;
+			enum_field_types type;
+			unsigned long length;
+			int32_t data_length;
+			char* data;
+		};
+	private:
+		int m_errno;							// 错误代码
+		std::string m_errstr;					// 错误信息
+		std::shared_ptr<MySQLStmt> m_stmt;		// 预处理类指针
+		std::vector<MYSQL_BIND> m_binds;		// 绑定参数数组
+		std::vector<Data> m_datas;				// 获取数据数组
 	};
 
 	class MySQLManager;

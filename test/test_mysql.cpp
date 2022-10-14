@@ -27,49 +27,71 @@ int main(int argc, char const *argv[])
 		std::cout << "connect fail" << std::endl;
 	}
 
-	int id = 0;
-	std::string name = "test";
-	double weight = 37.58;
+	// int id = 0;
+	// std::string name = "test";
+	// double weight = 37.58;
 
-	server::MySQLStmt::ptr stmt = server::MySQLStmt::Create(mysql, 
-		"insert into girls(id,name,weight,btime,pic) values(?,?,?,?,?)");
+	// server::MySQLStmt::ptr stmt = server::MySQLStmt::Create(mysql, 
+	// 	"insert into girls(id,name,weight,btime,pic) values(?,?,?,?,?)");
 
-	// 模拟超女数据，向表中插入5条测试数据
-	for (int i = 6; i < 11; i++)
+	// // 模拟超女数据，向表中插入5条测试数据
+	// for (int i = 6; i < 11; i++)
+	// {
+	// 	id = i + 1;
+	// 	name = "西施" + std::to_string(i) + "frank";
+	// 	weight = 45.55 + i;
+
+	// 	std::ostringstream pic;
+	// 	std::string filename = "./data/img/" + std::to_string(i - 5) + ".jpg";
+	// 	std::fstream file;
+	// 	file.open(filename, std::ios::in);
+
+	// 	if (!file.is_open())
+	// 	{
+	// 		SERVER_LOG_INFO(g_logger) << "open file failed!";
+	// 		return 0;
+	// 	}
+	// 	char ch;
+	// 	while (pic && file.get(ch))
+	// 	{
+	// 		pic.put(ch);
+	// 	}
+
+	// 	stmt->bind(1, id);
+	// 	stmt->bind(2, name);
+	// 	stmt->bind(3, weight);
+	// 	stmt->bindTime(4, time(0));
+	// 	stmt->bindBlob(5, pic.str());
+
+	// 	if (stmt->execute() != 0)
+	// 	{
+	// 		SERVER_LOG_ERROR(g_logger) << stmt->getErrStr();
+	// 		return false;
+	// 	}
+	// }
+
+	auto res = std::dynamic_pointer_cast<server::MySQLRes>(
+		mysql->query("select id,name,weight,date_format(btime,'%%Y-%%m-%%d %%H:%%i:%%s') from girls where id in (2,3,4)"));
+
+	// SERVER_LOG_INFO(g_logger) << res->isNull(1);
+	if(!res)
 	{
-		id = i + 1;
-		name = "西施" + std::to_string(i) + "frank";
-		weight = 45.55 + i;
-
-		std::ostringstream pic;
-		std::string filename = "./data/img/" + std::to_string(i - 5) + ".jpg";
-		std::fstream file;
-		file.open(filename, std::ios::in);
-
-		if (!file.is_open())
-		{
-			SERVER_LOG_INFO(g_logger) << "open file failed!";
-			return 0;
-		}
-		char ch;
-		while (pic && file.get(ch))
-		{
-			pic.put(ch);
-		}
-
-		stmt->bind(1, id);
-		stmt->bind(2, name);
-		stmt->bind(3, weight);
-		stmt->bindTime(4, time(0));
-		stmt->bindBlob(5, pic.str());
-
-		if (stmt->execute() != 0)
-		{
-			SERVER_LOG_ERROR(g_logger) << stmt->getErrStr();
-			return false;
-		}
+		SERVER_LOG_ERROR(g_logger) << "invalid";
+		return false;
 	}
 
+	if(res->getErrno()) {
+		SERVER_LOG_ERROR(g_logger) << "errno=" << res->getErrno()
+								   << " errstr=" << res->getErrStr() << std::endl;
+		return false;
+	}
+	
+	while (res->next())
+	{
+		int64_t girl_id = res->getInt64(0);
+		std::string name = res->getString(1);
+		SERVER_LOG_INFO(g_logger) << girl_id << " - " << name;
+	}
 	return 0;
 }
 
