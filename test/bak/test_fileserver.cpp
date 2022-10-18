@@ -10,23 +10,21 @@
  */
 #include "../include/log.h"
 #include "../include/_public.h"
+#include "../include/_mysql.h"
 #include "../include/address.h"
 #include "../include/socket.h"
 #include "../include/mysql.h"
 #include "../include/thread.h"
 #include "../include/threadpool.h"
 #include "../include/mutex.h"
+#include "../include/sqlconnpool.h"
 
 static server::Logger::ptr g_logger = SERVER_LOG_NAME("system");
 
-server::Mutex g_mutex;
 
 // static server::SqlConnPool* sqlPool = server::sqlConnPool::GetInstance();
 
 void run(server::Socket::ptr sock, server::MySQL::ptr mysql);
-
-void main_thread(server::Socket::ptr& sock, epoll_event& ev, 
-		int epollfd, std::map<int, server::Socket::ptr>& sock_list);
 
 // void test(server::Socket::ptr sock, server::MySQL::ptr mysql);
 
@@ -34,14 +32,14 @@ bool _xmtoarg(char *strxmlbuffer);
 
 int ReadT(const int sockfd, char *buffer, const int size, const int itimeout);
 
-bool Login(server::MySQL::ptr mysql, const std::string msg, server::Socket::ptr sock);
+bool Login(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
-bool CheckPerm(server::MySQL::ptr mysql, const std::string msg, server::Socket::ptr sock);
+bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
-bool ExecSQL(server::MySQL::ptr mysql, const std::string msg, server::Socket::ptr sock);
+bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock);
 
 bool getvalue(const char *buffer, const char *name, char *value, const int len);
-std::string getvalue(const std::string buffer, const std::string name);
+std::string getvalue(const char *buffer, const std::string name);
 
 int main(int argc, char const *argv[])
 {
@@ -73,162 +71,109 @@ int main(int argc, char const *argv[])
 	params["user"] = "yc";
 	params["passwd"] = "436052";
 	params["dbname"] = "IDC";
-
-	server::ThreadPool::ptr tp(new server::ThreadPool(5));
-
-	int epollfd = epoll_create(1);
-    struct epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.fd = sock->getSocket();
-    epoll_ctl(epollfd, EPOLL_CTL_ADD, sock->getSocket(), &ev);
-    struct epoll_event evs[1024];
-    std::map<int, server::Socket::ptr> sock_list;
-    sock_list[sock->getSocket()] = sock;
+	server::MySQL::ptr mysql(new server::MySQL(params));
+	std::queue<server::Socket::ptr> client_pool;
+	server::Socket::ptr cli;
 
 	while (true)
 	{
-        int infds = epoll_wait(epollfd, evs, 1024, -1);
-        if (infds < 0)
-        {
-            break;
-        }
-
-        if (infds == 0)
-        {
-            continue;
-        }
-
-		for (int i = 0; i < infds; i++)
-        {
-            if (evs[i].data.fd == sock->getSocket())
-            {
-                auto client = sock->accept();
-                ev.data.fd = client->getSocket();
-                ev.events = EPOLLIN;
-                epoll_ctl(epollfd, EPOLL_CTL_ADD, client->getSocket(), &ev);
-                sock_list[client->getSocket()] = client;
-				// server::Thread::ptr listen_thread(new server::Thread(
-				// 	std::bind(main_thread, sock_list[evs[i].data.fd], ev, epollfd, sock_list), "listen_thread"));
-				// tp->addTask(std::bind(
-				// 	main_thread, sock, ev, epollfd, sock_list
-				// ));
-			}
-            else
-            {
-                // std::string buffer;
-                // buffer.resize(1024);
-                // if (sock_list[evs[i].data.fd]->recv(&buffer[0], buffer.size()) <= 0)
-                // {
-                //     close(evs[i].data.fd);
-                // }
-                // else
-				server::MySQL::ptr mysql(new server::MySQL(params));
-				// server::Thread::ptr response_thread(new server::Thread(
-				// 	std::bind(run, sock_list[evs[i].data.fd], mysql), "thread_" + std::to_string(evs[i].data.fd))
-				// );
-				tp->addTask(std::bind(run, sock_list[evs[i].data.fd], mysql));
-			}
-		}	
+		// server::ThreadPool::ptr tp(new server::ThreadPool(5));
+		cli = sock->accept();
+		SERVER_LOG_INFO(g_logger) << cli->toString();
+		if (cli)
+		{
+			client_pool.push(cli);
+		}
+		// 接受客户端的连接
+		if (client_pool.empty())
+			continue;
+		
+		server::Socket::ptr client = client_pool.front();
+		client->setRecvTimeout(100);
+		server::Address::ptr ip = client->getRemoteAddress();
+		SERVER_LOG_INFO(g_logger) << ip->toString();
+		std::function<void()> run1 = std::bind(run, client, mysql);
+		server::Thread::ptr thr(new server::Thread(run1, "name_" + ip->toString()));
+			// std::function<void()> run1 = std::bind(run, client, mysql);
+			// tp->AddTask(run1);
+		client_pool.pop();
 	}
 
 	return 0;
 }
 
-void main_thread(server::Socket::ptr& sock, epoll_event& ev, 
-		int epollfd, std::map<int, server::Socket::ptr>& sock_list)
-{
-	// while(true)
-	// {
-	server::Mutex::Lock lock(g_mutex);
-	auto client = sock->accept();
-	// if (client == nullptr) continue;
-	ev.data.fd = client->getSocket();
-	ev.events = EPOLLIN;
-	epoll_ctl(epollfd, EPOLL_CTL_ADD, client->getSocket(), &ev);
-	sock_list[client->getSocket()] = client;
-	// break;
-	// }
-}
-
 void run(server::Socket::ptr sock, server::MySQL::ptr mysql)
 {
-	std::string msg;
-	msg.resize(1024);
+	char strrecvbuf[1024];
+	char strsendbuf[1024];
+	memset(strrecvbuf, 0, sizeof(strrecvbuf));
 
-	if (sock->recv(&msg[0], msg.size()) <= 0)
+	SERVER_LOG_INFO(g_logger) << "子进程开始接收数据...";
+
+	// 读取客户端的报文，如果超时或失败，线程退出
+	if (sock->recv(strrecvbuf, strlen(strrecvbuf)) <= 0)
 	{
-		sock->close();
+		SERVER_LOG_INFO(g_logger) << "读取客户端报文失败";
 		return;
 	}
-
-	// SERVER_LOG_INFO(g_logger) << msg;
+	SERVER_LOG_INFO(g_logger) << strrecvbuf;
 	// 如果不是GET请求报文则不处理，线程退出
-	if (strncmp(msg.c_str(), "GET", 3) != 0)
+	if (strncmp(strrecvbuf, "GET", 3) != 0)
 	{
 		sock->close();
 		return;
 	}
 
+	if(!mysql->connect())
 	{
-		// server::Mutex::Lock lock(g_mutex);
-		if(!mysql->connect())
-		{
-			std::cout << "connect fail" << std::endl;
-		}
+		std::cout << "connect fail" << std::endl;
 	}
 
 	// 判断URL中用户名和密码，如果不正确，返回认证失败的相应报文，线程退出
-	if (Login(mysql, msg, sock) == false)
+	if (Login(mysql, strrecvbuf, sock) == false)
 	{
 		sock->close();
 		return;
 	}
 
 	// 判断用户是否有调用接口的权限，如果没有，返回没有权限的相应报文，线程退出
-	if (CheckPerm(mysql, msg, sock) == false)
+	if (CheckPerm(mysql, strrecvbuf, sock) == false)
 	{
 		sock->close();
 		return;
 	}
 
 	// 先把响应报文的头部发送给客户端
-	std::string sendmsg = "HTTP/1.1 200 OK\r\n" \
+	memset(strsendbuf, 0, sizeof(strsendbuf));
+	sprintf(strsendbuf, \
+		"HTTP/1.1 200 OK\r\n" \
 		"Server: webserver\r\n" \
-		"Content-Type: text/html;charset=utf-8\r\n\r\n";
-
-	if (sock->send(&sendmsg[0], sendmsg.size()) <= 0)
+		"Content-Type: text/html;charset=utf-8\r\n\r\n");
+	if(sock->send(strsendbuf, strlen(strsendbuf)) <= 0)
 	{
 		SERVER_LOG_ERROR(g_logger) << "发送数据失败";
-		return;
 	}
+
 	// 再执行接口的sql语句，把数据返回给客户端。
-	if (ExecSQL(mysql, msg, sock) == false)
+	if (ExecSQL(mysql, strrecvbuf, sock) == false)
 	{
 		SERVER_LOG_ERROR(g_logger) << "执行sql语句失败";
 		sock->close();
 		return;
 	}
 
-	// 查询成功，将记录插入表中
-	// if (UpdateStmt(mysql, msg, sock))
-
 	sock->close();
 }
 
-bool ExecSQL(server::MySQL::ptr mysql, const std::string msg, server::Socket::ptr sock)
+bool ExecSQL(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock)
 {
 	// 从请求报文中解析接口名
-	std::string username = getvalue(msg, "username");
-	std::string interid = getvalue(msg, "interid");
-	server::MySQLStmtRes::ptr res;
+	std::string interid = getvalue(buffer, "interid");
 
 	// 从接口参数配置表T_INTERCFG中加载接口参数
-	{
-		// server::Mutex::Lock lock(g_mutex);
-		res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
-			"select selectsql,colstr,bindin from T_INTERCFG where interid=?", interid
-		));
-	}
+	auto res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
+		"select selectsql,colstr,bindin from T_INTERCFG where interid=?", interid
+	));
 
 	if(!res)
 	{
@@ -246,13 +191,14 @@ bool ExecSQL(server::MySQL::ptr mysql, const std::string msg, server::Socket::pt
 	std::string selectsql = res->getString(0);
 	std::string colstr = res->getString(1);
 	std::string bindin = res->getString(2);
+	SERVER_LOG_INFO(g_logger) << selectsql;
+	SERVER_LOG_INFO(g_logger) << colstr;
+	SERVER_LOG_INFO(g_logger) << bindin;
+
 
 	// 准备查询数据的SQL语句
-	{
-		// server::Mutex::Lock lock(g_mutex);
-		res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
-			selectsql.c_str()));
-	}
+	res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
+		selectsql.c_str()));
 
 	if(!res)
 	{
@@ -274,7 +220,6 @@ bool ExecSQL(server::MySQL::ptr mysql, const std::string msg, server::Socket::pt
 	char strsendbuffer[4001];
 	memset(strsendbuffer, 0, sizeof(strsendbuffer));
 	std::string line;
-	int linecount = 0;
 	while (res->next())
 	{
 		for (int i = 0; i < CmdStr.CmdCount(); i++)
@@ -297,54 +242,35 @@ bool ExecSQL(server::MySQL::ptr mysql, const std::string msg, server::Socket::pt
 		memcpy(strsendbuffer, line.c_str(), line.size() + 1);
 		sock->send(strsendbuffer, strlen(strsendbuffer));
 		line.clear();
-		linecount++;
 	}
 	sock->send("</data>\n", strlen("</data>\n"));
-	// std::vector<std::string> invalue;
-	res = std::dynamic_pointer_cast<server::MySQLStmtRes>(mysql->queryStmt(
-		"select typeid from T_INTERCFG where interid=?", interid));
-	res->next();
-	std::string type_id = res->getString(0);
-	auto stmt = std::dynamic_pointer_cast<server::MySQLStmt>(
-		mysql->prepare(
-			"insert into T_USERLOG(username,interid,upttime,ip,rpc) value(?,?,?,?,?)"));
-	stmt->bind(1, username);
-	stmt->bind(2, interid);
-	stmt->bindTime(3, time(0));
-	stmt->bind(4, sock->getRemoteAddress()->toString());
-	stmt->bind(5, linecount);
 
-	if (stmt->execute() != 0)
-	{
-		SERVER_LOG_INFO(g_logger) << "insert failed errno=" << stmt->getErrno()
-			<< " errstr=" << stmt->getErrStr();
-	}
+	std::vector<std::string> invalue;
 
 	return true;
 }
 
-bool CheckPerm(server::MySQL::ptr mysql, const std::string msg, server::Socket::ptr sock)
+bool CheckPerm(server::MySQL::ptr mysql, const char *buffer, server::Socket::ptr sock)
 {
-	std::string username = getvalue(msg, "username");
-	std::string interid = getvalue(msg, "interid");
+	char username[31], intername[31];
+
+	getvalue(buffer, "username", username, 30);
+	getvalue(buffer, "interid", intername, 30);
+	std::string un(username);
+	std::string intname(intername);
 	int icount = 0;
-	// SERVER_LOG_INFO(g_logger) << "username = " << username
-			// << " interid = " << interid;
+
 	// stmt.connect(conn);
-	server::MySQLStmt::ptr stmt;
-	{
-		// server::Mutex::Lock lock(g_mutex);
-		stmt = std::dynamic_pointer_cast<server::MySQLStmt>(
-			mysql->prepare("select count(*) from T_USERANDINTER where username=? and interid=? and interid in (select interid from T_INTERCFG where rsts=1)")
-		);
-		stmt->bind(1, username);
-		stmt->bind(2, interid);
-		
-		server::ISQLData::ptr res = stmt->query();
-		res->next();
-		icount = res->getInt8(0);
-	// SERVER_LOG_INFO(g_logger) << "icount --> " << icount;
-	}
+	auto stmt = std::dynamic_pointer_cast<server::MySQLStmt>(
+		mysql->prepare("select count(*) from T_USERANDINTER where username=? and interid=? and interid in (select interid from T_INTERCFG where rsts=1)")
+	);
+	stmt->bind(1, un);
+	stmt->bind(2, intname);
+	
+	server::ISQLData::ptr res = stmt->query();
+	res->next();
+	icount = res->getInt8(0);
+
 	if (icount != 1)
 	{
 		char strbuffer[256];
@@ -359,30 +285,31 @@ bool CheckPerm(server::MySQL::ptr mysql, const std::string msg, server::Socket::
 		sock->send(strbuffer,strlen(strbuffer));
 		return false;
 	}
+
+	SERVER_LOG_INFO(g_logger) << "username = " << username
+			<< " interid = " << intername;
+
 	return true;
 }
 
-bool Login(server::MySQL::ptr mysql,const std::string msg, server::Socket::ptr sock)
+bool Login(server::MySQL::ptr mysql,const char *buffer, server::Socket::ptr sock)
 {
-	std::string username = getvalue(msg, "username");		// 获取用户名
-	std::string passwd = getvalue(msg, "passwd");		// 获取密码
+	char username[31];
+	char password[31];
+	getvalue(buffer, "username", username, 30);		// 获取用户名
+	getvalue(buffer, "passwd", password, 30);		// 获取密码
+	std::string un(username);
+	std::string pwd(password);
 	int icount = 0;
 
-	// SERVER_LOG_INFO(g_logger) << username << " - " << passwd;
-	server::MySQLStmt::ptr stmt;
-	{
-		// server::Mutex::Lock lock(g_mutex);
-		stmt = std::dynamic_pointer_cast<server::MySQLStmt>(
-			mysql->prepare("select count(*) from T_USERINFO where username=? and passwd=? and rsts=1")
-		);
-		stmt->bind(1, username);
-		stmt->bind(2, passwd);
-		
-		server::ISQLData::ptr res = stmt->query();
-		res->next();
-		icount = res->getInt8(0);
-	}
-
+	auto istmt = mysql->prepare("select count(*) from T_USERINFO where username=? and passwd=? and rsts=1");
+	server::MySQLStmt::ptr stmt = std::dynamic_pointer_cast<server::MySQLStmt>(istmt);
+	stmt->bind(1, un);
+	stmt->bind(2, pwd);
+	
+	server::ISQLData::ptr res = stmt->query();
+	res->next();
+	icount = res->getInt8(0);
 	if (icount == 0)
 	{
 		char strbuffer[256];
@@ -397,7 +324,7 @@ bool Login(server::MySQL::ptr mysql,const std::string msg, server::Socket::ptr s
 
 		return false;
 	}
-	// SERVER_LOG_INFO(g_logger) << "user : " << username << " login";
+	SERVER_LOG_INFO(g_logger) << "user : " << username << " login";
 
 	return true;
 }
@@ -412,22 +339,14 @@ bool Login(server::MySQL::ptr mysql,const std::string msg, server::Socket::ptr s
  * @return true 
  * @return false 
  */
-std::string getvalue(const std::string buffer, const std::string name)
+std::string getvalue(const char *buffer, const std::string name)
 {
 	std::string str(buffer);
 	size_t start = str.find(name) + name.size() + 1;
-	if (start == std::string::npos)
-		return nullptr;
-	// str = str.substr(start);
+	str = str.substr(start);
 
-	size_t end = str.find("&", start);
-	if (end == std::string::npos)
-		end = str.find(" ", start);
-	
-	if (end == std::string::npos)
-		return nullptr;
-	// SERVER_LOG_INFO(g_logger) << name << " start: " << start << " end: " << end << " size: " << str.size();
-	std::string ret = str.substr(start, end - start);
+	size_t end = str.find("HTTP");
+	std::string ret = str.substr(0, end - 1);
 
 	return ret;
 }

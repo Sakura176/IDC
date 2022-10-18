@@ -2,7 +2,6 @@
 #define __IDC_CRTDATA_H__
 
 #include "_public.h"
-// #include "../log/log.h"
 
 struct st_stcode
 {

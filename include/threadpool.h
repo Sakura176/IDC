@@ -20,22 +20,14 @@ namespace server
 		ThreadPool(ThreadPool&&) = default;
 		~ThreadPool();
 
-		void AddTask(std::function<void()> task);
+		void addTask(std::function<void()> task);
 
 	private:
-		static void run(void* arg);
-
-	private:
-		struct Pool
-		{
-			Mutex mtx;
-			bool isClosed;
-			Semaphore m_semaphore;
-			std::queue<std::function<void()>> tasks;
-		};
-		std::shared_ptr<Pool> pool_;
+		bool m_isClosed;
 		Mutex m_mutex;
-
+		Semaphore m_sem;
+		std::vector<Thread::ptr> m_workers;
+		std::queue<std::function<void()> > m_tasks;
 	};
 }
 

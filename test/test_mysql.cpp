@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <fstream>
-#include "../include/_mysql.h"
 #include "../include/mysql.h"
 #include "../include/log.h"
 

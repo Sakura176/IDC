@@ -3,10 +3,13 @@
 
 server::Logger::ptr g_logger = SERVER_LOG_ROOT();
 
+server::RWMutex g_mutex;
 
 void func1(int num)
 {
-	SERVER_LOG_INFO(g_logger) << "test threadpool func1 : num" << num;
+	sleep(1);
+	server::RWMutex::ReadLock rdlock(g_mutex);
+	SERVER_LOG_INFO(g_logger) << "test threadpool func1 : num " << num;
 }
 
 int main(int argc, char const *argv[])
@@ -18,7 +21,7 @@ int main(int argc, char const *argv[])
 	int num = 0;
 	while (true)
 	{
-		tp->AddTask(std::bind(&func1, std::ref(num)));
+		tp->addTask(std::bind(&func1, std::ref(num)));
 		num++;
 	}
 	SERVER_LOG_INFO(g_logger) << "end threadpool test";

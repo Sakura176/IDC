@@ -19,19 +19,16 @@ endif()
 
 set(LIB_SRC
 	src/_public.cpp 
-	src/_mysql.cpp
 	src/mysql.cpp
-	src/mysqlconn.cpp
-	src/crtdata.cpp
+	# src/crtdata.cpp
 	src/log.cpp
 	src/config.cpp
 	src/mutex.cpp
 	src/thread.cpp
 	src/util.cpp
-	src/obttodb.cpp
-	src/dbtofile.cpp
+	# src/obttodb.cpp
+	# src/dbtofile.cpp
 	src/threadpool.cpp
-	src/sqlconnpool.cpp
 	src/socket.cpp
 	src/address.cpp
 	src/timer.cpp
@@ -45,21 +42,21 @@ set(LIB_LIB
 	pthread
 	yaml-cpp)
 
-add_executable(test_crtdata test/test_crtdata.cpp)
-add_dependencies(test_crtdata IDC)
-target_link_libraries(test_crtdata ${LIB_LIB})
+# add_executable(test_crtdata test/test_crtdata.cpp)
+# add_dependencies(test_crtdata IDC)
+# target_link_libraries(test_crtdata ${LIB_LIB})
 
-add_executable(test_mysql test/test_mysql.cpp)
-add_dependencies(test_mysql IDC)
-target_link_libraries(test_mysql ${LIB_LIB})
+# add_executable(test_mysql test/test_mysql.cpp)
+# add_dependencies(test_mysql IDC)
+# target_link_libraries(test_mysql ${LIB_LIB})
 
-add_executable(test_datatodb test/test_datatodb.cpp)
-add_dependencies(test_datatodb IDC)
-target_link_libraries(test_datatodb ${LIB_LIB})
+# add_executable(test_datatodb test/test_datatodb.cpp)
+# add_dependencies(test_datatodb IDC)
+# target_link_libraries(test_datatodb ${LIB_LIB})
 
-add_executable(test_config test/test_config.cpp)
-add_dependencies(test_config IDC)
-target_link_libraries(test_config ${LIB_LIB})
+# add_executable(test_config test/test_config.cpp)
+# add_dependencies(test_config IDC)
+# target_link_libraries(test_config ${LIB_LIB})
 
 add_executable(test_fileserver test/test_fileserver.cpp)
 add_dependencies(test_fileserver IDC)

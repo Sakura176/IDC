@@ -40,6 +40,8 @@ int main(int argc, char const *argv[])
     ev.data.fd = socket->getSocket();
     epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSocket(), &ev);
     struct epoll_event evs[10];
+    std::map<int, server::Socket::ptr> sock_list;
+    sock_list[socket->getSocket()] = socket;
 
     SERVER_LOG_INFO(g_logger) << socket->toString() ;
     SERVER_LOG_INFO(g_logger) << "listening...";
@@ -66,28 +68,25 @@ int main(int argc, char const *argv[])
                 ev.data.fd = client->getSocket();
                 ev.events = EPOLLIN;
                 epoll_ctl(epollfd, EPOLL_CTL_ADD, client->getSocket(), &ev);
+                sock_list[client->getSocket()] = client;
             }
             else
             {
                 std::string buffer;
                 buffer.resize(1024);
+                if (sock_list[evs[i].data.fd]->recv(&buffer[0], buffer.size()) <= 0)
+                {
+                    SERVER_LOG_INFO(g_logger) << "fail";
+                    close(evs[i].data.fd);
+                }
+                else
+                {
+                    SERVER_LOG_INFO(g_logger) << buffer;
+                    buffer = "recved massage: " + buffer;
+                    sock_list[evs[i].data.fd]->send(&buffer[0], buffer.size());
+                }
             }
         }
-
-        auto client = socket->accept();
-        SERVER_ASSERT(client);
-        SERVER_LOG_INFO(g_logger) << "new client: " << client->toString();
-        while(true)
-        {
-            int len = client->recv(&buffer[0], buffer.size());
-
-            if(len > 0)
-            {
-                SERVER_LOG_INFO(g_logger) << buffer;
-                client->send("hello world", strlen("hello world"));
-            }
-        }
-        // client->close();
     }
     return 0;
 }

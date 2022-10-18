@@ -95,6 +95,7 @@ namespace server
 	public:
 		static std::string Formatv(const char *fmt, va_list ap);
 	};
+	
 
 	class TypeUtil
 	{

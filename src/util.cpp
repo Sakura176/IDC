@@ -39,6 +39,12 @@ namespace server
 		return mktime(&t);
 	}
 
+	/**
+	 * @brief 
+	 * 
+	 * @param str 
+	 * @return std::string 
+	 */
 	static std::string demangle(const char *str) {
 		size_t size = 0;
 		int status  = 0;
