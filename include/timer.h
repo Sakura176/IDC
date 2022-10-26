@@ -129,7 +129,7 @@ namespace server
 		/**
 		 * @brief 当有新的定时器插入到定时器的首部，执行函数
 		 */
-		virtual void onTimerInsertedAtFront() = 0;
+		// virtual void onTimerInsertedAtFront() = 0;
 
 		/**
 		 * @brief 将定时器添加到管理器中

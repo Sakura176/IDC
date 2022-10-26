@@ -1,5 +1,6 @@
 #include "../include/timer.h"
 #include "../include/log.h"
+#include "../include/epoll.h"
 
 static server::Logger::ptr g_logger = SERVER_LOG_ROOT();
 
@@ -18,6 +19,7 @@ void timer_callback() {
 
 void test_timer() {
 	server::TimerManager tm;
+	server::Epoll::ptr ep(new server::Epoll(1024));
 	// 循环定时器
 	s_timer = tm.addTimer(1000, timer_callback, true);
     
@@ -28,14 +30,23 @@ void test_timer() {
     tm.addTimer(5000, []{
         SERVER_LOG_INFO(g_logger) << "5000ms timeout";
     });
+    while(true)
+    {
+        ep->wait(tm.getNextTimer());
+        std::vector<std::function<void()> > cbs;
+        tm.listExpiredCb(cbs);
+        for(auto it : cbs)
+        {
+            it();
+        }
+    }
+    // SERVER_LOG_INFO(g_logger) << tm.getNextTimer();
 }
 
 int main(int argc, char *argv[]) 
 {
+        test_timer();
 
-    test_timer();
+        SERVER_LOG_INFO(g_logger) << "end";
 
-    SERVER_LOG_INFO(g_logger) << "end";
-
-    return 0;
 }

@@ -20,19 +20,24 @@ endif()
 set(LIB_SRC
 	src/_public.cpp 
 	src/mysql.cpp
+	src/buffer.cpp
 	# src/crtdata.cpp
 	src/log.cpp
 	src/config.cpp
 	src/mutex.cpp
 	src/thread.cpp
 	src/util.cpp
+	src/epoll.cpp
 	# src/obttodb.cpp
 	# src/dbtofile.cpp
 	src/threadpool.cpp
 	src/socket.cpp
 	src/address.cpp
 	src/timer.cpp
-	src/tcpserver.cpp
+	src/httpconn.cpp
+	src/httprequest.cpp
+	src/httpresponse.cpp
+	src/server.cpp
 )
 add_library(IDC SHARED ${LIB_SRC})
 
@@ -66,13 +71,13 @@ add_executable(test_threadpool test/test_threadpool.cpp)
 add_dependencies(test_threadpool IDC)
 target_link_libraries(test_threadpool ${LIB_LIB})
 
-add_executable(test_socket test/test_socket.cpp)
-add_dependencies(test_socket IDC)
-target_link_libraries(test_socket ${LIB_LIB})
+# add_executable(test_socket test/test_socket.cpp)
+# add_dependencies(test_socket IDC)
+# target_link_libraries(test_socket ${LIB_LIB})
 
-# add_executable(test_timer test/test_timer.cpp)
-# add_dependencies(test_timer IDC)
-# target_link_libraries(test_timer ${LIB_LIB})
+add_executable(test_timer test/test_timer.cpp)
+add_dependencies(test_timer IDC)
+target_link_libraries(test_timer ${LIB_LIB})
 
 add_executable(demo_server test/demo_server.cpp)
 add_dependencies(demo_server IDC)
@@ -81,6 +86,10 @@ target_link_libraries(demo_server ${LIB_LIB})
 add_executable(demo_client test/demo_client.cpp)
 add_dependencies(demo_client IDC)
 target_link_libraries(demo_client ${LIB_LIB})
+
+add_executable(test_server test/test_server.cpp)
+add_dependencies(test_server IDC)
+target_link_libraries(test_server ${LIB_LIB})
 # add_executable(procctl tools/procctl.cpp)
 # add_dependencies(procctl IDC)
 # target_link_libraries(procctl ${LIB_LIB})

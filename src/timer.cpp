@@ -34,6 +34,7 @@ namespace server
 	{
 		m_next = server::GetCurrentMS() + m_ms;
 	}
+
 	Timer::Timer(uint64_t next)
 		:m_next(next) {
 	}
@@ -214,7 +215,7 @@ namespace server
 
 		if(at_front) 
 		{
-			onTimerInsertedAtFront();
+			// onTimerInsertedAtFront();
 		}
 	}
 

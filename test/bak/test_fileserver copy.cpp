@@ -16,7 +16,6 @@
 #include "../include/thread.h"
 #include "../include/threadpool.h"
 #include "../include/mutex.h"
-#include "../include/epoll.h"
 
 static server::Logger::ptr g_logger = SERVER_LOG_NAME("system");
 
@@ -26,8 +25,8 @@ server::Mutex g_mutex;
 
 void run(server::Socket::ptr sock, server::MySQL::ptr mysql);
 
-void main_thread(server::Socket::ptr sock, server::Epoll::ptr ep, 
-		std::map<int, server::Socket::ptr>& sock_list);
+void main_thread(server::Socket::ptr& sock, epoll_event& ev, 
+		int epollfd, std::map<int, server::Socket::ptr>& sock_list);
 
 // void test(server::Socket::ptr sock, server::MySQL::ptr mysql);
 
@@ -77,15 +76,19 @@ int main(int argc, char const *argv[])
 
 	server::ThreadPool::ptr tp(new server::ThreadPool(5));
 
-	server::Epoll::ptr ep(new server::Epoll(1024));
-	ep->addFd(sock->getSocket(), EPOLLIN);
+	int epollfd = epoll_create(1);
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = sock->getSocket();
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, sock->getSocket(), &ev);
+    struct epoll_event evs[1024];
     std::map<int, server::Socket::ptr> sock_list;
     sock_list[sock->getSocket()] = sock;
 
 	while (true)
 	{
-		int infds = ep->wait();
-		if (infds < 0)
+        int infds = epoll_wait(epollfd, evs, 1024, -1);
+        if (infds < 0)
         {
             break;
         }
@@ -97,18 +100,33 @@ int main(int argc, char const *argv[])
 
 		for (int i = 0; i < infds; i++)
         {
-            if (ep->getEventFd(i) == sock->getSocket())
+            if (evs[i].data.fd == sock->getSocket())
             {
                 auto client = sock->accept();
-				ep->addFd(client->getSocket(), EPOLLIN);
-				sock_list[client->getSocket()] = client;
-				// tp->addTask(
-				// 	std::bind(main_thread, sock, ep, sock_list));
+                ev.data.fd = client->getSocket();
+                ev.events = EPOLLIN;
+                epoll_ctl(epollfd, EPOLL_CTL_ADD, client->getSocket(), &ev);
+                sock_list[client->getSocket()] = client;
+				// server::Thread::ptr listen_thread(new server::Thread(
+				// 	std::bind(main_thread, sock_list[evs[i].data.fd], ev, epollfd, sock_list), "listen_thread"));
+				// tp->addTask(std::bind(
+				// 	main_thread, sock, ev, epollfd, sock_list
+				// ));
 			}
             else
             {
+                // std::string buffer;
+                // buffer.resize(1024);
+                // if (sock_list[evs[i].data.fd]->recv(&buffer[0], buffer.size()) <= 0)
+                // {
+                //     close(evs[i].data.fd);
+                // }
+                // else
 				server::MySQL::ptr mysql(new server::MySQL(params));
-				tp->addTask(std::bind(run, sock_list[ep->getEventFd(i)], mysql));
+				// server::Thread::ptr response_thread(new server::Thread(
+				// 	std::bind(run, sock_list[evs[i].data.fd], mysql), "thread_" + std::to_string(evs[i].data.fd))
+				// );
+				tp->addTask(std::bind(run, sock_list[evs[i].data.fd], mysql));
 			}
 		}	
 	}
@@ -116,20 +134,20 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 
-void main_thread(server::Socket::ptr sock, server::Epoll::ptr ep, 
-		std::map<int, server::Socket::ptr>& sock_list)
+void main_thread(server::Socket::ptr& sock, epoll_event& ev, 
+		int epollfd, std::map<int, server::Socket::ptr>& sock_list)
 {
-	// server::Mutex::Lock lock(g_mutex);
-	while(true)
-	{
-		auto client = sock->accept();
-		if(client)
-		{
-			ep->addFd(client->getSocket(), EPOLLIN);
-			sock_list[client->getSocket()] = client;
-			break;
-		}
-	}
+	// while(true)
+	// {
+	server::Mutex::Lock lock(g_mutex);
+	auto client = sock->accept();
+	// if (client == nullptr) continue;
+	ev.data.fd = client->getSocket();
+	ev.events = EPOLLIN;
+	epoll_ctl(epollfd, EPOLL_CTL_ADD, client->getSocket(), &ev);
+	sock_list[client->getSocket()] = client;
+	// break;
+	// }
 }
 
 void run(server::Socket::ptr sock, server::MySQL::ptr mysql)

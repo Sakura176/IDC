@@ -297,24 +297,6 @@ namespace server
 		return -1;
 	}
 
-	// int Socket::recv(void* buffer, size_t length, const size_t timeout, int flags)
-	// {
-	// 	if (timeout > 0)
-	// 	{
-	// 		struct pollfd fds;
-	// 		fds.fd = m_sock;
-	// 		fds.events = POLLIN;
-	// 		int iret;
-	// 		if ( (iret = poll(&fds, 1, timeout*1000)) <= 0)
-	// 			return iret;
-	// 	}
-	// 	if(isConnected())
-	// 	{
-	// 		return ::recv(m_sock, buffer, length, flags);
-	// 	}
-	// 	return -1;
-	// }
-
 	int Socket::recv(void* buffer, size_t length, int flags) {
 		if(isConnected()) {
 			return ::recv(m_sock, buffer, length, flags);
